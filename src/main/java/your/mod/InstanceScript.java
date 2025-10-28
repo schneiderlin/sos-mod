@@ -19,7 +19,7 @@ import view.keyboard.KEYS;
  */
 final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 
-	private final Eclipse eclipse = new Eclipse();
+//	private final Eclipse eclipse = new Eclipse();
 
 	/**
 	 * Called whenever the game saves
@@ -28,7 +28,7 @@ final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 	 */
 	@Override
 	public void save(FilePutter file) {
-		file.i(eclipse.getDay());
+//		file.i(eclipse.getDay());
 	}
 
 	/**
@@ -39,7 +39,7 @@ final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 	 */
 	@Override
 	public void load(FileGetter file) throws IOException {
-		eclipse.setDay(file.i());
+//		eclipse.setDay(file.i());
 	}
 
 	/**
@@ -50,7 +50,7 @@ final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 	 */
 	@Override
 	public void update(double ds) {
-		eclipse.update();
+//		eclipse.update();
 	}
 
 	/**

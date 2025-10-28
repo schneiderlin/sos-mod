@@ -161,7 +161,7 @@
 
         <!-- These settings will go into the mods _Info.txt file -->
         <mod.version>${project.version}</mod.version>
-        <mod.name>Clojure Mod</mod.name>
+        <mod.name>Example Mod</mod.name>
         <mod.description>enable clojure nrepl</mod.description>
         <mod.author>Jake</mod.author>
         <mod.info>Example</mod.info>
@@ -238,6 +238,7 @@
             <groupId>io.github.schneiderlin</groupId>
             <artifactId>nrepl-starter</artifactId>
             <version>2.0.0-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Testing -->

@@ -1,2 +1,6 @@
 .idea
 target
+.calva
+.lsp
+.clj-kondo
+SEVERE_ERROR.txt
