@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import script.SCRIPT;
 import settlement.room.main.util.RoomInitData;
 import util.info.INFO;
+import repl.R;
+import repl.config.StarterServiceProperties;
 
 /**
  * Entry point for the mod.
@@ -37,7 +39,11 @@ public final class MainScript implements SCRIPT {
 	 * Called before an actual game is started or loaded
 	 */
 	@Override
-	public void initBeforeGameCreated() {}
+	public void initBeforeGameCreated() {
+        R r = new R(new StarterServiceProperties());
+        Thread replThread = r.start(7888);
+        System.out.println("started clojure nrepl in 7888");
+    }
 
 
 	/**
