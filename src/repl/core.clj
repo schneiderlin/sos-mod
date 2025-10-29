@@ -1,11 +1,12 @@
 (ns repl.core
   (:require [repl.utils :refer [get-field-value update-once]])
   (:import
-   [game GAME]
+   [game GAME] 
    [settlement.main SETT]
    [settlement.stats STATS]
    [settlement.room.main.construction ConstructionInit]
    [settlement.room.main.placement UtilWallPlacability]
+   [settlement.room.main.placement PLACEMENT]
    [your.mod InstanceScript]))
 
 (comment
@@ -232,8 +233,8 @@
 
   ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会出错
   (defn create-room [_ds]
-    (let [center-x 100
-          center-y 100
+    (let [center-x 130
+          center-y 120
           construction-init (let [upgrade 0 ;; 无升级 
                                   furnisher home-constructor ;; 住宅构造器
                                   structure (.get woods 0) ;; 木制建筑
@@ -260,7 +261,7 @@
       (.createClean (.construction rooms) tmp construction-init)
 
       ;; 少了 placer place 的步骤, 所以完成建造的时候获取不到相关信息
-
+      
       ;; 清除临时区域
       (.clear tmp)))
 
@@ -288,5 +289,28 @@
      :multiplierStats (.-multiplierStats furnisher-item)
      :width (.width furnisher-item)
      :height (.height furnisher-item)})
+  :rcf)
+
+;; 判断地形是否可以建造
+
+(comment
+  ;; 目前只是 3*3 的可以判断, cx cy 是中心点.
+ (defn can-place-home [home-blueprint cx cy]
+   (let [room-width 3
+         room-height 3
+         start-x (- cx 1)
+         start-y (- cy 1)
+         build-on-walls false] ; 房子可以在墙上建造（室内）
+     ;; 检查所有 3x3 瓷砖是否都可以放置
+     (every? (fn [[x y]]
+               (let [tx (+ start-x x)
+                     ty (+ start-y y)]
+                 ;; PLACEMENT.placable 返回 null 如果可以放置，否则返回错误消息
+                 (nil? (PLACEMENT/placable tx ty home-blueprint build-on-walls))))
+             (for [y (range room-height)
+                   x (range room-width)]
+               [x y])))) 
+  
+  (can-place-home home 130 120)
   :rcf)
 
