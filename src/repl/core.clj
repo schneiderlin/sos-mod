@@ -1,7 +1,11 @@
 (ns repl.core
-  (:import [game GAME]
-           [settlement.main SETT]
-           [settlement.stats STATS]))
+  (:require [repl.utils :refer [get-field-value]])
+  (:import
+   [game GAME]
+   [settlement.main SETT]
+   [settlement.stats STATS]
+   [your.mod InstanceScript]
+   ))
 
 (comment
   (def world (GAME/world))
@@ -193,8 +197,11 @@
   :rcf)
 
 ;; 创建工地
-
 (comment
+  ;; 测试一下 instance script 里面的 consumer
+  (InstanceScript/addConsumer "test" (fn [ds] (println "test" ds)))
+  (InstanceScript/removeConsumer "test")
+
   ;; 创建3x3大小的住宅
   (def center-x 100)
   (def center-y 100)
@@ -204,14 +211,20 @@
   (def home (.-HOME rooms))
   (def home-constructor (.constructor home))
   
-  ;; 获取Field对象
-  (require '[repl.utils :refer [get-field-value]])
+  ;; 获取Field对象 
   (def tmp-area (get-field-value rooms "tmpArea"))
   (get-field-value tmp-area "lastUser")
 
   ;; this可以是任何Object
   ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会报错
-  (def tmp (.tmpArea rooms "1"))
+  (defn create-room [_ds]
+    (let [tmp (.tmpArea rooms "1")]
+      (println (get-field-value tmp-area "lastUser"))
+      (.clear tmp)))
+  
+  (InstanceScript/addConsumer "test" create-room)
+  (InstanceScript/removeConsumer "test")
+  
   
   ;; // 设置建造区域（3x3的房子）
   ;; int size = 3;

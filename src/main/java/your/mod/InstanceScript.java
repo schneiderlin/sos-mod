@@ -1,6 +1,12 @@
 package your.mod;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import script.SCRIPT;
 import snake2d.MButt;
@@ -17,9 +23,19 @@ import view.keyboard.KEYS;
  *
  * See {@link SCRIPT.SCRIPT_INSTANCE} for some documentation
  */
-final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
+public final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 
 //	private final Eclipse eclipse = new Eclipse();
+
+    private static final Map<String, Consumer<Double>> updaters = new HashMap<>();
+
+    public static void addConsumer(String key, Consumer<Double> f) {
+        updaters.put(key, f);
+    }
+
+    public static void removeConsumer(String key) {
+        updaters.remove(key);
+    }
 
 	/**
 	 * Called whenever the game saves
@@ -51,6 +67,9 @@ final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 	@Override
 	public void update(double ds) {
 //		eclipse.update();
+        updaters.forEach((_k, f) -> {
+            f.accept(ds);
+        });
 	}
 
 	/**
