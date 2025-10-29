@@ -5,6 +5,7 @@
    [settlement.main SETT]
    [settlement.stats STATS]
    [settlement.room.main.construction ConstructionInit]
+   [settlement.room.main.placement UtilWallPlacability]
    [your.mod InstanceScript]))
 
 (comment
@@ -248,13 +249,6 @@
         (.set tmp
               (+ x (- center-x 1)) (+ y (- center-y 1))))
 
-      ;; 查看临时区域大小
-      #_(println {:mx (.mx tmp)
-                  :mX (.mX tmp)
-                  :my (.my tmp)
-                  :mY (.mY tmp)
-                  :area (.area tmp)})
-
       (let [furnisher-groups (.get (.pgroups home-constructor) 0)
             furnisher-item (.item furnisher-groups 0 0) ;; 获取第一个 FurnisherItem
             tx (- center-x 1) ;; 起始 x 坐标
@@ -272,6 +266,19 @@
 
   (update-once create-room)
 
+  (defn build-wall [_ds]
+    (let [tx 110
+          ty 110]
+      (UtilWallPlacability/wallBuild tx ty (.get woods 0))))
+  
+  (update-once build-wall)
+
+  (defn build-door [_ds]
+    (let [tx 110
+          ty 111]
+      (UtilWallPlacability/openingBuild tx ty (.get woods 0))))
+  (update-once build-door)
+
 
   (let [furnisher-groups (.get (.pgroups home-constructor) 0)
         furnisher-item (.item furnisher-groups 0 0)]
@@ -280,7 +287,6 @@
      :multiplierCosts (.-multiplierCosts furnisher-item)
      :multiplierStats (.-multiplierStats furnisher-item)
      :width (.width furnisher-item)
-     :height (.height furnisher-item)
-     })
+     :height (.height furnisher-item)})
   :rcf)
 
