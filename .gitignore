@@ -3,4 +3,5 @@ target
 .calva
 .lsp
 .clj-kondo
+.cpcache
 SEVERE_ERROR.txt
