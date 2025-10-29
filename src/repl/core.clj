@@ -229,7 +229,7 @@
                            (ConstructionInit. upgrade furnisher structure degrade state)))
 
 
-  ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会报错
+  ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会出错
   (defn create-room [_ds]
     (let [center-x 100
           center-y 100
@@ -255,30 +255,32 @@
                   :mY (.mY tmp)
                   :area (.area tmp)})
 
+      (let [furnisher-groups (.get (.pgroups home-constructor) 0)
+            furnisher-item (.item furnisher-groups 0 0) ;; 获取第一个 FurnisherItem
+            tx (- center-x 1) ;; 起始 x 坐标
+            ty (- center-y 1)] ;; 起始 y 坐标
+        ;; 设置 FurnisherItem 到 fData 中，这样 HomeInstance 构造时就能找到它
+        (.itemSet (.fData rooms) tx ty furnisher-item (.room tmp)))
+
       ;; 创建工地
       (.createClean (.construction rooms) tmp construction-init)
+
+      ;; 少了 placer place 的步骤, 所以完成建造的时候获取不到相关信息
 
       ;; 清除临时区域
       (.clear tmp)))
 
-  (InstanceScript/addConsumer "test" create-room)
-  (InstanceScript/removeConsumer "test")
+  (update-once create-room)
 
 
-  ;; // 创建ConstructionInit
-  ;; TBuilding structure = SETT.TERRAIN().BUILDINGS.get("WOOD");  // 木制建筑
-  ;; ConstructionInit init = new ConstructionInit(
-  ;;     0,                       // 无升级
-  ;;     homeConstructor,         // 住宅构造器
-  ;;     structure,               // 室内建筑
-  ;;     0,                       // 无退化
-  ;;     null                     // 无状态
-  ;; );
-
-  ;; // 创建工地
-  ;; SETT.ROOMS().construction.createClean(tmp, init);
-
-  ;; // 必须清理！
-  ;; tmp.clear();
+  (let [furnisher-groups (.get (.pgroups home-constructor) 0)
+        furnisher-item (.item furnisher-groups 0 0)]
+    {:area (.-area furnisher-item)
+     :rotation (.-rotation furnisher-item)
+     :multiplierCosts (.-multiplierCosts furnisher-item)
+     :multiplierStats (.-multiplierStats furnisher-item)
+     :width (.width furnisher-item)
+     :height (.height furnisher-item)
+     })
   :rcf)
 

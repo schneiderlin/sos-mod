@@ -1,11 +1,8 @@
 package your.mod;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import script.SCRIPT;
@@ -27,7 +24,7 @@ public final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 
 //	private final Eclipse eclipse = new Eclipse();
 
-    private static final Map<String, Consumer<Double>> updaters = new HashMap<>();
+    private static final Map<String, Consumer<Double>> updaters = new ConcurrentHashMap<>();
 
     public static void addConsumer(String key, Consumer<Double> f) {
         updaters.put(key, f);
