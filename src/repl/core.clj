@@ -77,6 +77,12 @@
 
   :rcf)
 
+
+(def entities-instance (SETT/ENTITIES))
+(def entities (.getAllEnts entities-instance))
+(def non-nil-entities (filter #(not (nil? %)) entities))
+(def entity (first non-nil-entities)) ;; 这个可能是 humanoid
+
 ;; settlement 相关
 (comment
   (def settlement (GAME/s))
@@ -113,12 +119,12 @@
       (.getAt 7)
       (.key))
 
-  (def entities-instance (SETT/ENTITIES))
-  (.size entities-instance)
-  (def entities (.getAllEnts entities-instance))
 
-  (def non-nil-entities (filter #(not (nil? %)) entities))
-  (def entity (first non-nil-entities))
+  ;; entity 如果是 Humanoid, 可以获取他的 AI
+  (def ai-manager (get-field-value entity "ai"))
+  
+  (let [state (.state ai-manager)]
+    (.-key state))
 
   ;; entity 如果是 Humanoid, 可以获取他的 Induvidual
   (def induvidual (.indu entity))
