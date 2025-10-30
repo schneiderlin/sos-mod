@@ -1,5 +1,7 @@
 (ns repl.core
-  (:require [repl.utils :refer [get-field-value update-once]])
+  (:require 
+   [clojure.repl.deps :refer [add-lib]]
+   [repl.utils :refer [get-field-value update-once]])
   (:import
    [game GAME] 
    [settlement.main SETT]
@@ -298,25 +300,30 @@
   :rcf)
 
 ;; 判断地形是否可以建造
-
 (comment
   ;; 目前只是 3*3 的可以判断, cx cy 是中心点.
- (defn can-place-home [home-blueprint cx cy]
-   (let [room-width 3
-         room-height 3
-         start-x (- cx 1)
-         start-y (- cy 1)
-         build-on-walls false] ; 房子可以在墙上建造（室内）
-     ;; 检查所有 3x3 瓷砖是否都可以放置
-     (every? (fn [[x y]]
-               (let [tx (+ start-x x)
-                     ty (+ start-y y)]
-                 ;; PLACEMENT.placable 返回 null 如果可以放置，否则返回错误消息
-                 (nil? (PLACEMENT/placable tx ty home-blueprint build-on-walls))))
-             (for [y (range room-height)
-                   x (range room-width)]
-               [x y])))) 
+  (defn can-place-home [home-blueprint cx cy]
+    (let [room-width 3
+          room-height 3
+          start-x (- cx 1)
+          start-y (- cy 1)
+          build-on-walls false] ; 房子可以在墙上建造（室内）
+      ;; 检查所有 3x3 瓷砖是否都可以放置
+      (every? (fn [[x y]]
+                (let [tx (+ start-x x)
+                      ty (+ start-y y)]
+                  ;; PLACEMENT.placable 返回 null 如果可以放置，否则返回错误消息
+                  (nil? (PLACEMENT/placable tx ty home-blueprint build-on-walls))))
+              (for [y (range room-height)
+                    x (range room-width)]
+                [x y])))) 
   
   (can-place-home home 130 120)
+  :rcf)
+
+;; 动态加其他东西
+(comment
+  (add-lib 'no.cjohansen/powerpack {:mvn/version "2025.10.22"})
+  (add-lib 'datalevin/datalevin {:mvn/version "0.9.22"})
   :rcf)
 
