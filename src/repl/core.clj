@@ -1,7 +1,11 @@
 (ns repl.core
-  (:import [game GAME]
-           [settlement.main SETT]
-           [settlement.stats STATS]))
+  (:require [repl.utils :refer [get-field-value update-once]])
+  (:import
+   [game GAME]
+   [settlement.main SETT]
+   [settlement.stats STATS]
+   [settlement.room.main.construction ConstructionInit]
+   [your.mod InstanceScript]))
 
 (comment
   (def world (GAME/world))
@@ -11,7 +15,7 @@
   (def events (GAME/events))
   (def raiders (GAME/raiders))
 
-  
+
   :rcf)
 
 ;; player 相关
@@ -20,7 +24,7 @@
 
   (def tech (.tech player))
   (def titles (.titles player))
-  
+
   ;; 这些都是 全局的 race 数据, 不是 player 特有的
   (def races (.races player))
   (-> (.get races 0)
@@ -32,12 +36,12 @@
   (-> (.get races 0)
       (.population)
       (.-immigrantsPerDay))
-  
+
   (def race0 (.get races 0)) ;; 猪人
   (def race1 (.get races 1)) ;; 邓多里安人
-  
+
   (.citizens player race0)
-  (.citizens player race1) 
+  (.citizens player race1)
 
   (.get races 1)
 
@@ -51,22 +55,22 @@
 (comment
   (def stats-population (STATS/POP))
   (def stats-population-age (.-age stats-population))
-  
+
   ;; 工作相关
   (def stats-work (STATS/WORK))
   (def stat-work-time (.-WORK_TIME stats-work))
 
 
   ;; 需求相关
-  (def stats-needs (STATS/NEEDS)) 
+  (def stats-needs (STATS/NEEDS))
   (def stat-exposure (.-EXPOSURE stats-needs))
   (def stat-danger (.-INJURIES stats-needs))
   (def stat-exhaustion (.-EXHASTION stats-needs))
-  
+
   ;; 这里面都是空的, 暂时没用到
-;;   (def stat-other-needs (.-OTHERS stats-needs))
-;;   (.size stat-other-needs)
-;;   (def stat-other-need1 (get stat-other-needs 6))
+  ;;   (def stat-other-needs (.-OTHERS stats-needs))
+  ;;   (.size stat-other-needs)
+  ;;   (def stat-other-need1 (get stat-other-needs 6))
 
 
   :rcf)
@@ -78,7 +82,7 @@
 
   (def humanoids-instance (SETT/HUMANOIDS))
   (def animals-instance (SETT/ANIMALS))
-  
+
   (def animals (.sett animals-instance))
   (.size animals)
 
@@ -135,13 +139,13 @@
   ;; STAT 是通过 indu 然后再 getD 获取
   (let [int-oe (.indu stat-work-time #_stat-exhaustion)
         d (.getD int-oe induvidual)]
-    d) 
-  
+    d)
+
   ;; STAT 的信息
   (let [info (.info stat-work-time #_stat-exhaustion)]
     [(.name info)
      (.desc info)])
-  
+
   :rcf)
 
 ;; 建筑相关
@@ -150,11 +154,11 @@
 
   ;; 王座
   (def throne (.-THRONE rooms))
-  
+
   (let [info (.-info throne)]
     [(.-name info)
      (.desc info)])
-  
+
   (import '[settlement.room.main.throne THRONE])
   (THRONE/tile)
   (THRONE/coo)
@@ -165,7 +169,7 @@
   (let [canal (.-canal room-water)
         drain (.-drain room-water)]
     [canal drain])
-  
+
   ;; 住宅类型, 不是 instance. ChamberInstance 才是实例
   (def room-chamber (.-CHAMBER rooms))
   ;; 这个可能是内饰? 
@@ -177,7 +181,7 @@
    :mustBeOutdoors (.mustBeOutdoors furnisher)
    :usesArea (.usesArea furnisher) ;; 使用区域就是需要自己拉格子然后摆放那种, 否则就是水井那种固定的
    :canBeCopied (.canBeCopied furnisher)}
-  
+
   ;; 厕所
   (def room-janitor (.-JANITOR rooms))
   (let [furnisher (.constructor room-janitor)]
@@ -189,52 +193,94 @@
      :usesArea (.usesArea furnisher)
      :canBeCopied (.canBeCopied furnisher)})
 
-  
+
   :rcf)
 
-;; 创建工地
+(def rooms (SETT/ROOMS))
+;; 获取住宅相关的 
+(def home (.-HOME rooms))
+(def home-constructor (.constructor home))
 
+;; 建筑材料
+(def woods (.get (.-BUILDINGS (SETT/TERRAIN)) "WOOD"))
+(.get woods 0)
+
+;; 创建工地
 (comment
-  ;; 创建3x3大小的住宅
-  (def center-x 100)
-  (def center-y 100)
-  
-  ;; 获取住宅相关的
-  (def rooms (SETT/ROOMS))
-  (def home (.-HOME rooms))
-  (def home-constructor (.constructor home))
-  
-  ;; 获取Field对象
-  (require '[repl.utils :refer [get-field-value]])
+  ;; 测试一下 instance script 里面的 consumer
+  (InstanceScript/addConsumer "test" (fn [ds] (println "test" ds)))
+  (InstanceScript/removeConsumer "test")
+
+  (update-once (fn [ds] (println "test" ds)))
+
+
+
+  ;; 获取Field对象 
   (def tmp-area (get-field-value rooms "tmpArea"))
   (get-field-value tmp-area "lastUser")
 
-  ;; this可以是任何Object
-  ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会报错
-  (def tmp (.tmpArea rooms "1"))
-  
-  ;; // 设置建造区域（3x3的房子）
-  ;; int size = 3;
-  ;; for (int y = 0; y < size; y++) {
-  ;;     for (int x = 0; x < size; x++) {
-  ;;         tmp.set(centerX - 1 + x, centerY - 1 + y);
-  ;;     }
-  ;; }
-  
-  ;; // 创建ConstructionInit
-  ;; TBuilding structure = SETT.TERRAIN().BUILDINGS.get("WOOD");  // 木制建筑
-  ;; ConstructionInit init = new ConstructionInit(
-  ;;     0,                       // 无升级
-  ;;     homeConstructor,         // 住宅构造器
-  ;;     structure,               // 室内建筑
-  ;;     0,                       // 无退化
-  ;;     null                     // 无状态
-  ;; );
-  
-  ;; // 创建工地
-  ;; SETT.ROOMS().construction.createClean(tmp, init);
-  
-  ;; // 必须清理！
-  ;; tmp.clear();
+  ;; 创建个 ConstructionInit 来测试一下
+  (def construction-init (let [upgrade 0 ;; 无升级 
+                               furnisher home-constructor ;; 住宅构造器
+                               structure (.get woods 0) ;; 木制建筑
+                               degrade 0 ;; 无退化
+                               state nil ;; 无状态
+                               ]
+                           (ConstructionInit. upgrade furnisher structure degrade state)))
+
+
+  ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会出错
+  (defn create-room [_ds]
+    (let [center-x 100
+          center-y 100
+          construction-init (let [upgrade 0 ;; 无升级 
+                                  furnisher home-constructor ;; 住宅构造器
+                                  structure (.get woods 0) ;; 木制建筑
+                                  degrade 0 ;; 无退化
+                                  state nil ;; 无状态
+                                  ]
+                              (ConstructionInit. upgrade furnisher structure degrade state))
+          tmp (.tmpArea rooms "1")]
+
+      ;; 设置建造区域（3x3的房子）
+      (doseq [y (range 3)
+              x (range 3)]
+        (.set tmp
+              (+ x (- center-x 1)) (+ y (- center-y 1))))
+
+      ;; 查看临时区域大小
+      #_(println {:mx (.mx tmp)
+                  :mX (.mX tmp)
+                  :my (.my tmp)
+                  :mY (.mY tmp)
+                  :area (.area tmp)})
+
+      (let [furnisher-groups (.get (.pgroups home-constructor) 0)
+            furnisher-item (.item furnisher-groups 0 0) ;; 获取第一个 FurnisherItem
+            tx (- center-x 1) ;; 起始 x 坐标
+            ty (- center-y 1)] ;; 起始 y 坐标
+        ;; 设置 FurnisherItem 到 fData 中，这样 HomeInstance 构造时就能找到它
+        (.itemSet (.fData rooms) tx ty furnisher-item (.room tmp)))
+
+      ;; 创建工地
+      (.createClean (.construction rooms) tmp construction-init)
+
+      ;; 少了 placer place 的步骤, 所以完成建造的时候获取不到相关信息
+
+      ;; 清除临时区域
+      (.clear tmp)))
+
+  (update-once create-room)
+
+
+  (let [furnisher-groups (.get (.pgroups home-constructor) 0)
+        furnisher-item (.item furnisher-groups 0 0)]
+    {:area (.-area furnisher-item)
+     :rotation (.-rotation furnisher-item)
+     :multiplierCosts (.-multiplierCosts furnisher-item)
+     :multiplierStats (.-multiplierStats furnisher-item)
+     :width (.width furnisher-item)
+     :height (.height furnisher-item)
+     })
   :rcf)
 
