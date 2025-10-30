@@ -136,12 +136,6 @@ Files (e.g. assets) for the mod are located in `src/main/java/resources/mod-file
 You can enable **Debug Mode** and **Developer Mode** in the game launcher **settings**.
 You will get more detailed logs and in-game developer tools for testing.
 
-## Eclipse
-
-* Add a new [Run Configuration](https://www.subjectcoach.com/tutorials/detail/contents/beginners-guide-to-eclipse-ide/chapter/working-with-run-configurations).
-* Set the **main class** name to `init.MainLaunchLauncher`.
-* In the tab **Arguments** set the **working directory** to your game installation folder e.g. `C:/Program Files (x86)/Steam/steamapps/common/Songs of Syx`.
-
 ## Testing
 
 There's [JUnit 5](https://junit.org/junit5/) with [AssertJ](https://assertj.github.io/doc/) and [Mockito 4](https://site.mockito.org/) for testing your code.
@@ -227,7 +221,7 @@ It is used for the following things in the mod example:
 * `package` the built code and your other mod files to the game mod structure
 * Copy (`install`) the built mod into the game mod directory
 * Copy (`install`) the built mod into the mod uploader directory (optional)
-* Add and manage third party dependencies like [Lombok](https://projectlombok.org/) and [JUnit](https://junit.org/junit5/)
+* Add and manage third party dependencies like [JUnit](https://junit.org/junit5/)
 
 The build process follows a certain "[build lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html)".
 These are the phases:

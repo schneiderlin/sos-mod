@@ -1,13 +1,9 @@
 package your.mod;
 
-import java.nio.file.Path;
-
-import lombok.NoArgsConstructor;
-import script.SCRIPT;
-import settlement.room.main.util.RoomInitData;
-import util.info.INFO;
 import repl.R;
 import repl.config.StarterServiceProperties;
+import script.SCRIPT;
+import util.info.INFO;
 
 /**
  * Entry point for the mod.
@@ -16,11 +12,13 @@ import repl.config.StarterServiceProperties;
  *
  * See {@link SCRIPT} for some documentation.
  */
-@NoArgsConstructor
 @SuppressWarnings("unused") // used by the game via reflection
 public final class MainScript implements SCRIPT {
 
-	/**
+    public MainScript() {
+    }
+
+    /**
 	 * This info will be displayed when starting a new game and choosing a script
 	 */
 	private final INFO info = new INFO("Example Mod", "Adds a sun eclipse, which changes the light color.");
