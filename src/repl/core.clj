@@ -1,10 +1,14 @@
 (ns repl.core
-  (:require [repl.utils :refer [get-field-value update-once]])
+  (:require 
+   [clojure.repl.deps :refer [add-lib]]
+   [repl.utils :refer [get-field-value update-once]])
   (:import
-   [game GAME]
+   [game GAME] 
    [settlement.main SETT]
    [settlement.stats STATS]
    [settlement.room.main.construction ConstructionInit]
+   [settlement.room.main.placement UtilWallPlacability]
+   [settlement.room.main.placement PLACEMENT]
    [your.mod InstanceScript]))
 
 (comment
@@ -75,6 +79,12 @@
 
   :rcf)
 
+
+(def entities-instance (SETT/ENTITIES))
+(def entities (.getAllEnts entities-instance))
+(def non-nil-entities (filter #(not (nil? %)) entities))
+(def entity (first non-nil-entities)) ;; 这个可能是 humanoid
+
 ;; settlement 相关
 (comment
   (def settlement (GAME/s))
@@ -111,12 +121,12 @@
       (.getAt 7)
       (.key))
 
-  (def entities-instance (SETT/ENTITIES))
-  (.size entities-instance)
-  (def entities (.getAllEnts entities-instance))
 
-  (def non-nil-entities (filter #(not (nil? %)) entities))
-  (def entity (first non-nil-entities))
+  ;; entity 如果是 Humanoid, 可以获取他的 AI
+  (def ai-manager (get-field-value entity "ai"))
+  
+  (let [state (.state ai-manager)]
+    (.-key state))
 
   ;; entity 如果是 Humanoid, 可以获取他的 Induvidual
   (def induvidual (.indu entity))
@@ -231,8 +241,8 @@
 
   ;; 这些操作必须在单个 frame 里面完成, 否则 render 和 update 的时候会出错
   (defn create-room [_ds]
-    (let [center-x 100
-          center-y 100
+    (let [center-x 130
+          center-y 120
           construction-init (let [upgrade 0 ;; 无升级 
                                   furnisher home-constructor ;; 住宅构造器
                                   structure (.get woods 0) ;; 木制建筑
@@ -248,13 +258,6 @@
         (.set tmp
               (+ x (- center-x 1)) (+ y (- center-y 1))))
 
-      ;; 查看临时区域大小
-      #_(println {:mx (.mx tmp)
-                  :mX (.mX tmp)
-                  :my (.my tmp)
-                  :mY (.mY tmp)
-                  :area (.area tmp)})
-
       (let [furnisher-groups (.get (.pgroups home-constructor) 0)
             furnisher-item (.item furnisher-groups 0 0) ;; 获取第一个 FurnisherItem
             tx (- center-x 1) ;; 起始 x 坐标
@@ -266,11 +269,24 @@
       (.createClean (.construction rooms) tmp construction-init)
 
       ;; 少了 placer place 的步骤, 所以完成建造的时候获取不到相关信息
-
+      
       ;; 清除临时区域
       (.clear tmp)))
 
   (update-once create-room)
+
+  (defn build-wall [_ds]
+    (let [tx 110
+          ty 110]
+      (UtilWallPlacability/wallBuild tx ty (.get woods 0))))
+  
+  (update-once build-wall)
+
+  (defn build-door [_ds]
+    (let [tx 110
+          ty 111]
+      (UtilWallPlacability/openingBuild tx ty (.get woods 0))))
+  (update-once build-door)
 
 
   (let [furnisher-groups (.get (.pgroups home-constructor) 0)
@@ -280,7 +296,34 @@
      :multiplierCosts (.-multiplierCosts furnisher-item)
      :multiplierStats (.-multiplierStats furnisher-item)
      :width (.width furnisher-item)
-     :height (.height furnisher-item)
-     })
+     :height (.height furnisher-item)})
+  :rcf)
+
+;; 判断地形是否可以建造
+(comment
+  ;; 目前只是 3*3 的可以判断, cx cy 是中心点.
+  (defn can-place-home [home-blueprint cx cy]
+    (let [room-width 3
+          room-height 3
+          start-x (- cx 1)
+          start-y (- cy 1)
+          build-on-walls false] ; 房子可以在墙上建造（室内）
+      ;; 检查所有 3x3 瓷砖是否都可以放置
+      (every? (fn [[x y]]
+                (let [tx (+ start-x x)
+                      ty (+ start-y y)]
+                  ;; PLACEMENT.placable 返回 null 如果可以放置，否则返回错误消息
+                  (nil? (PLACEMENT/placable tx ty home-blueprint build-on-walls))))
+              (for [y (range room-height)
+                    x (range room-width)]
+                [x y])))) 
+  
+  (can-place-home home 130 120)
+  :rcf)
+
+;; 动态加其他东西
+(comment
+  (add-lib 'no.cjohansen/powerpack {:mvn/version "2025.10.22"})
+  (add-lib 'datalevin/datalevin {:mvn/version "0.9.22"})
   :rcf)
 
