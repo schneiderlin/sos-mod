@@ -6,6 +6,7 @@
    [view.main VIEW]
    [settlement.main SETT]
    [settlement.stats STATS]
+   [settlement.entity.humanoid Humanoid]
    [settlement.room.main.construction ConstructionInit]
    [settlement.room.main.placement UtilWallPlacability]
    [settlement.room.main.placement PLACEMENT]
@@ -52,35 +53,78 @@
   (def desc (.desc player))
   :rcf)
 
-;; stats 相关
-(comment
-  (def stats-population (STATS/POP))
-  (def stats-population-age (.-age stats-population))
+(def stats-population (STATS/POP))
+(def stats-population-age (.-age stats-population))
 
-  ;; 工作相关
-  (def stats-work (STATS/WORK))
-  (def stat-work-time (.-WORK_TIME stats-work))
+;; 工作相关
+(def stats-work (STATS/WORK))
+(def stat-work-time (.-WORK_TIME stats-work))
 
+;; 需求相关
+(def stats-needs (STATS/NEEDS))
+(def stat-exposure (.-EXPOSURE stats-needs))
+(def stat-danger (.-INJURIES stats-needs))
+(def stat-exhaustion (.-EXHASTION stats-needs))
 
-  ;; 需求相关
-  (def stats-needs (STATS/NEEDS))
-  (def stat-exposure (.-EXPOSURE stats-needs))
-  (def stat-danger (.-INJURIES stats-needs))
-  (def stat-exhaustion (.-EXHASTION stats-needs))
+;; 名称相关
+(def stats-appearance (STATS/APPEARANCE))
 
-  ;; 这里面都是空的, 暂时没用到
-  ;;   (def stat-other-needs (.-OTHERS stats-needs))
-  ;;   (.size stat-other-needs)
-  ;;   (def stat-other-need1 (get stat-other-needs 6))
+;; 关系相关
+(def ^util.data.GETTER_TRANS$GETTER_TRANSE friend-trans (.-FRIEND stats-population))
 
-
+(comment 
+  (.get friend-trans induvidual)
   :rcf)
-
 
 (def entities-instance (SETT/ENTITIES))
 (def entities (.getAllEnts entities-instance))
 (def non-nil-entities (filter #(not (nil? %)) entities))
 (def entity (first non-nil-entities)) ;; 这个可能是 humanoid
+
+(defn humanoid-info [entity]
+  (when (instance? Humanoid entity)
+    (let [induvidual (.indu entity)]
+      {:lifespan (.lifespan stats-population-age induvidual)
+       :deathDay (.deathDay stats-population-age induvidual)
+       :isAdult (.isAdult stats-population-age induvidual)
+       :shouldDieOfOldAge (.shouldDieOfOldAge stats-population-age induvidual)
+       :critical (.critical stat-exposure induvidual)
+       :isCold (.isCold stat-exposure induvidual)
+       :inDanger (.inDanger stat-danger induvidual)
+       :willDie (.willDie stat-danger induvidual 0)
+       :name (.name stats-appearance induvidual)
+       :friend (.get friend-trans induvidual)
+       :class (.clas induvidual)
+       })))
+
+(comment
+  (humanoid-info entity)
+  :rcf)
+
+;; 人口相关
+(comment
+  ;; 9 个猪人小孩
+  ;; 36 个人类小孩
+  ;; 左上角 553 人口
+  ;; 加起来 553 + 9 + 36 = 598. 但是下面能查到 601 个名字??
+  (def names
+    (->> non-nil-entities
+         (map humanoid-info)
+         (keep identity)
+         (map (comp #(.toString %) :name))
+         (into #{})
+         #_count))
+  
+  ;; 哪些人有朋友
+  (->> non-nil-entities
+       (map humanoid-info)
+       (keep identity)
+       (map :friend)
+       (keep identity)
+       count)
+  
+  (.clas induvidual)
+  :rcf)
 
 ;; settlement 相关
 (comment
@@ -323,6 +367,11 @@
   (require '[datalevin.core :as d])
   :rcf)
 
+(defn focus-entity [entity]
+  (let [ game-window (.getWindow sett-view)
+        body (.body entity)]
+    (.centerAt game-window (.cX body) (.cY body))))
+
 ;; 移动镜头到小人位置
 (comment
   (let [body (.body entity)]
@@ -332,9 +381,14 @@
      :y1 (.y1 body)
      :x2 (.x2 body)
      :y2 (.y2 body)})
+
+   
+  (-> non-nil-entities
+      (nth 3)
+      (focus-entity))
+
   
-  (def game-window (.getWindow sett-view))
-  (let [body (.body entity)]
-    (.centerAt game-window (.cX body) (.cY body))) 
+  (humanoid-info entity)
+  (humanoid-info (nth non-nil-entities 1))
   :rcf)
 
