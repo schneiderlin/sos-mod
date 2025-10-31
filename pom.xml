@@ -231,6 +231,12 @@
             <version>2.0.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.clojure</groupId>
+            <artifactId>tools.deps</artifactId>
+            <version>0.26.1553</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Testing -->
         <dependency>

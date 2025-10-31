@@ -1,9 +1,9 @@
 (ns repl.core
-  (:require 
-   [clojure.repl.deps :refer [add-lib]]
+  (:require
    [repl.utils :refer [get-field-value update-once]])
   (:import
-   [game GAME] 
+   [game GAME]
+   [view.main VIEW]
    [settlement.main SETT]
    [settlement.stats STATS]
    [settlement.room.main.construction ConstructionInit]
@@ -11,16 +11,13 @@
    [settlement.room.main.placement PLACEMENT]
    [your.mod InstanceScript]))
 
-(comment
-  (def world (GAME/world))
-  (def settlement (GAME/s))
-  (def interval (GAME/intervals))
-  (def factions (GAME/factions))
-  (def events (GAME/events))
-  (def raiders (GAME/raiders))
-
-
-  :rcf)
+(def world (GAME/world))
+(def settlement (GAME/s))
+(def interval (GAME/intervals))
+(def factions (GAME/factions))
+(def events (GAME/events))
+(def raiders (GAME/raiders))
+(def sett-view (VIEW/s))
 
 ;; player 相关
 (comment
@@ -124,7 +121,7 @@
 
   ;; entity 如果是 Humanoid, 可以获取他的 AI
   (def ai-manager (get-field-value entity "ai"))
-  
+
   (let [state (.state ai-manager)]
     (.-key state))
 
@@ -269,7 +266,7 @@
       (.createClean (.construction rooms) tmp construction-init)
 
       ;; 少了 placer place 的步骤, 所以完成建造的时候获取不到相关信息
-      
+
       ;; 清除临时区域
       (.clear tmp)))
 
@@ -279,7 +276,7 @@
     (let [tx 110
           ty 110]
       (UtilWallPlacability/wallBuild tx ty (.get woods 0))))
-  
+
   (update-once build-wall)
 
   (defn build-door [_ds]
@@ -316,14 +313,28 @@
                   (nil? (PLACEMENT/placable tx ty home-blueprint build-on-walls))))
               (for [y (range room-height)
                     x (range room-width)]
-                [x y])))) 
-  
+                [x y]))))
+
   (can-place-home home 130 120)
   :rcf)
 
 ;; 动态加其他东西
 (comment
-  (add-lib 'no.cjohansen/powerpack {:mvn/version "2025.10.22"})
-  (add-lib 'datalevin/datalevin {:mvn/version "0.9.22"})
+  (require '[datalevin.core :as d])
+  :rcf)
+
+;; 移动镜头到小人位置
+(comment
+  (let [body (.body entity)]
+    {:center [(.cX body)
+              (.cY body)]
+     :x1 (.x1 body)
+     :y1 (.y1 body)
+     :x2 (.x2 body)
+     :y2 (.y2 body)})
+  
+  (def game-window (.getWindow sett-view))
+  (let [body (.body entity)]
+    (.centerAt game-window (.cX body) (.cY body))) 
   :rcf)
 
