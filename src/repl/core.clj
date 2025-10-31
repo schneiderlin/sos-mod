@@ -121,9 +121,48 @@
        (keep identity)
        (map :friend)
        (keep identity)
-       count)
+       count) 
   
   (.clas induvidual)
+  :rcf)
+
+;; Export friendship relations to EDN
+(defn export-friendship-edn [filename]
+  (let [humanoids (->> non-nil-entities
+                       (map humanoid-info)
+                       (keep identity))
+        ;; Get all names including friends
+        all-names (atom #{})
+        links (atom [])]
+    
+    ;; Process each humanoid to extract friendships
+    (doseq [h humanoids]
+      (when-let [name-obj (:name h)]
+        (let [name-str (str name-obj)]
+          (swap! all-names conj name-str)
+          
+          ;; If this humanoid has a friend, extract friend's name and create a link
+          (when-let [friend-obj (:friend h)]
+            ;; friend-obj might be a Humanoid, so extract its induvidual if needed
+            (let [friend-induvidual (if (instance? Humanoid friend-obj)
+                                      (.indu friend-obj)
+                                      friend-obj)]
+              (when-let [friend-name-obj (.name stats-appearance friend-induvidual)]
+                (let [friend-name (str friend-name-obj)]
+                  (swap! all-names conj friend-name)
+                  (swap! links conj {:source name-str
+                                     :target friend-name
+                                     :type "friend"}))))))))
+    
+    ;; Build the final data structure
+    (let [data {:nodes (sort-by :id
+                                 (map (fn [name] {:id name})
+                                      @all-names))
+                :links @links}] 
+      data)))
+
+(comment 
+  (pr-str (export-friendship-edn "friendship.edn"))
   :rcf)
 
 ;; settlement 相关

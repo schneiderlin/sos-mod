@@ -15,4 +15,5 @@
 
   (add-lib 'no.cjohansen/powerpack {:mvn/version "2025.10.22"})
   (add-lib 'datalevin/datalevin {:mvn/version "0.9.22"}) 
+  (add-lib 'cheshire/cheshire {:mvn/version "6.1.0"})
   :rcf)
