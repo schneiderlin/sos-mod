@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Network Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            background: white;
+        }
+        
+        .node {
+            cursor: pointer;
+        }
+        
+        .node circle {
+            fill: #4a90e2;
+            stroke: #2c5aa0;
+            stroke-width: 2px;
+        }
+        
+        .node:hover circle {
+            fill: #6ba3e8;
+            stroke-width: 3px;
+        }
+        
+        .node text {
+            font-size: 10px;
+            fill: #333;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 1.5px;
+        }
+        
+        .link:hover {
+            stroke-opacity: 1;
+            stroke-width: 2px;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 12px;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        #controls button {
+            margin: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        
+        .selected {
+            fill: #ff6b6b !important;
+            stroke: #c92a2a !important;
+            stroke-width: 3px !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="info">
+            <div><strong>Friend Network</strong></div>
+            <div id="stats"></div>
+        </div>
+        <div id="controls">
+            <button onclick="resetZoom()">Reset View</button>
+            <button onclick="toggleLabels()">Toggle Labels</button>
+        </div>
+        <svg id="graph"></svg>
+    </div>
+
+    <script>
+        // Load data
+        let graph;
+        let showLabels = true;
+        
+        d3.json("data/friend.json").then(function(data) {
+            graph = data;
+            initializeVisualization();
+        }).catch(function(error) {
+            console.error("Error loading data:", error);
+            document.getElementById("stats").innerHTML = "Error loading data";
+        });
+
+        function initializeVisualization() {
+            const svg = d3.select("#graph");
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            // Update stats
+            document.getElementById("stats").innerHTML = `
+                Nodes: ${graph.nodes.length}<br>
+                Links: ${graph.links.length}
+            `;
+            
+            // Clear previous content
+            svg.selectAll("*").remove();
+            
+            // Create force simulation
+            const simulation = d3.forceSimulation(graph.nodes)
+                .force("link", d3.forceLink(graph.links).id(d => d.id).distance(100))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(20));
+            
+            // Create links
+            const link = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(graph.links)
+                .enter().append("line")
+                .attr("class", "link")
+                .attr("stroke-width", d => Math.sqrt(1));
+            
+            // Create nodes
+            const node = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(graph.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(drag(simulation));
+            
+            // Add circles to nodes
+            node.append("circle")
+                .attr("r", 8)
+                .on("mouseover", function(event, d) {
+                    d3.select(this)
+                        .classed("selected", true)
+                        .attr("r", 12);
+                    
+                    // Highlight connected nodes and links
+                    link.style("stroke-opacity", l => 
+                        l.source === d || l.target === d ? 1 : 0.1
+                    );
+                    
+                    node.select("circle").style("opacity", n => 
+                        n === d || graph.links.some(l => 
+                            (l.source === d && l.target === n) || 
+                            (l.source === n && l.target === d)
+                        ) ? 1 : 0.1
+                    );
+                })
+                .on("mouseout", function(event, d) {
+                    d3.select(this)
+                        .classed("selected", false)
+                        .attr("r", 8);
+                    
+                    // Reset all links and nodes
+                    link.style("stroke-opacity", 0.6);
+                    node.select("circle").style("opacity", 1);
+                });
+            
+            // Add labels to nodes
+            const labels = node.append("text")
+                .text(d => d.id)
+                .style("font-size", "10px")
+                .style("opacity", showLabels ? 1 : 0);
+            
+            // Update positions on simulation tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+            
+            // Zoom and pan
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    svg.select("g.nodes").attr("transform", event.transform);
+                    svg.select("g.links").attr("transform", event.transform);
+                });
+            
+            svg.call(zoom);
+        }
+        
+        // Drag behavior
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+        
+        // Control functions
+        function resetZoom() {
+            d3.select("#graph").transition()
+                .duration(750)
+                .call(
+                    d3.zoom().transform,
+                    d3.zoomIdentity
+                );
+        }
+        
+        function toggleLabels() {
+            showLabels = !showLabels;
+            d3.selectAll(".node text")
+                .style("opacity", showLabels ? 1 : 0);
+        }
+        
+        // Handle window resize
+        window.addEventListener("resize", function() {
+            if (graph) {
+                initializeVisualization();
+            }
+        });
+    </script>
+</body>
+</html>
