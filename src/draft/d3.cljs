@@ -127,9 +127,6 @@
       (.call svg zoom))))
 
 (defn ^:dev/after-load main []
-  (let [graph (atom nil)
-        _ (.then (js/d3.json "data/friend.json")
-                 (fn [data] 
-                   (init-visualization data)
-                   (reset! graph data)))]
-    ))
+  (.then (js/d3.json "data/friend.json")
+         (fn [data]
+           (init-visualization data))))
