@@ -1,0 +1,19 @@
+{:source-paths ["src"]
+ 
+ :dev-http {8000 "public"}
+
+ :dependencies
+ [[integrant "1.0.1"]
+  [no.cjohansen/replicant "2025.03.27"]
+  [no.cjohansen/portfolio "2025.01.28"]
+  [no.cjohansen/dataspex "2025.06.8"]
+  [com.domkm/silk "0.1.2"]
+  [lambdaisland/uri "1.19.155"]
+  [com.taoensso/telemere "1.0.1"]
+  [com.taoensso/sente "1.20.0"]
+  #_[com.taoensso/telemere "1.0.1"]]
+
+ :builds
+ {:app {:target :browser
+        :output-dir "public/js"
+        :modules {:main {:init-fn replicant.main/main #_repl.main/main}}}}}

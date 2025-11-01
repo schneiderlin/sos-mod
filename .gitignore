@@ -5,3 +5,10 @@ target
 .clj-kondo
 .cpcache
 SEVERE_ERROR.txt
+.shadow-cljs
+public/assets/
+node_modules
+public/js/cljs-runtime
+public/js/main.js
+public/output.css
+.nrepl-port
