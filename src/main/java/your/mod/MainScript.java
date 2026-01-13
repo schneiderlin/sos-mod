@@ -1,7 +1,7 @@
 package your.mod;
 
-import repl.R;
-import repl.config.StarterServiceProperties;
+// import repl.R;
+// import repl.config.StarterServiceProperties;
 import script.SCRIPT;
 import util.info.INFO;
 
@@ -38,9 +38,9 @@ public final class MainScript implements SCRIPT {
 	 */
 	@Override
 	public void initBeforeGameCreated() {
-        R r = new R(new StarterServiceProperties());
-        Thread replThread = r.start(7888);
-        System.out.println("started clojure nrepl in 7888");
+        // R r = new R(new StarterServiceProperties());
+        // Thread replThread = r.start(7888);
+        // System.out.println("started clojure nrepl in 7888");
     }
 
 

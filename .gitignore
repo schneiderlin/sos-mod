@@ -12,3 +12,5 @@ public/js/cljs-runtime
 public/js/main.js
 public/output.css
 .nrepl-port
+sos-src
+base
