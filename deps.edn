@@ -1,11 +1,12 @@
 {:paths ["src"]
  :deps {thheller/shadow-cljs {:mvn/version "2.26.2"}}
  :aliases
- {:debug {:extra-paths #_["C:/Users/zihao/Desktop/workspace/private/nrepl-starter/target/nrepl-starter-2.0.0-SNAPSHOT-jar-with-dependencies.jar"
-                          "C:/Users/zihao/.m2/repository/org/clojure/tools.deps/0.26.1553/tools.deps-0.26.1553.jar"]
+ {:debug {:extra-paths
           ["C:/Program Files (x86)/Steam/steamapps/common/Songs of Syx/SongsOfSyx.jar"
            ;; 添加 tutorial 的 jar 文件, 以后可能会有新的 jar, 更新游戏版本的时候需要注意
            "C:/Program Files (x86)/Steam/steamapps/common/Songs of Syx/base/script/000_Tutorial.jar"
            "C:/Program Files (x86)/Steam/steamapps/common/Songs of Syx/base/script/001_Tutorial.jar"
            ;; 提供 InstanceScript, mvn clean package 打包得到
-           "target/Example Mod.jar"]}}}
+           "target/Example Mod.jar"
+           ;; optional, 可以用来动态加载其他 lib
+           "C:/Users/zihao/.m2/repository/org/clojure/tools.deps/0.26.1553/tools.deps-0.26.1553.jar"]}}}
