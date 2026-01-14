@@ -1,0 +1,371 @@
+(ns game.sprite
+  (:import
+   [init.sprite SPRITES]
+   [init.sprite.UI UI]
+   [init.sprite.game GameSheets SheetType]
+   [init.sprite Textures]))
+
+"base/data.zip/data/assets/sprite/里面有各种 sprite sheet"
+
+;; Note: SheetType, GameSheets, and Textures are imported for type hints
+;; and potential future use. They may be used in function parameters or examples.
+
+;; ============================================
+;; UI Icons (图标)
+;; ============================================
+
+;; Get the Icons instance
+(defn icons []
+  (SPRITES/icons))
+
+(comment
+  (icons)
+  :rcf)
+
+;; Get small icons (16x16)
+(defn icons-small []
+  (.-s (icons)))
+
+(comment
+  (icons-small)
+  :rcf)
+
+;; Get medium icons (24x24)
+(defn icons-medium []
+  (.-m (icons)))
+
+(comment
+  (icons-medium)
+  :rcf)
+
+;; Get large icons (32x32)
+(defn icons-large []
+  (.-l (icons)))
+
+;; Get a specific small icon by field name
+;; Example: (icon-small "sword") -> accesses .sword field
+(defn icon-small [icon-name]
+  (let [icons-s (icons-small)]
+    (try
+      (let [field (.getField (class icons-s) icon-name)]
+        (.get field icons-s))
+      (catch Exception _
+        nil))))
+
+;; ============================================
+;; Icon Inspection (图标检查)
+;; ============================================
+
+;; Get icon information (size, width, height, etc.)
+(defn icon-info [icon]
+  (when icon
+    {:class (class icon)
+     :size (try (.-size icon) (catch Exception _ nil))
+     :width (try (.width icon) (catch Exception _ nil))
+     :height (try (.height icon) (catch Exception _ nil))
+     :has-texture (try (some? (.texture icon)) (catch Exception _ false))}))
+
+;; Get icon size
+(defn icon-size [icon]
+  (when icon
+    (try (.-size icon) (catch Exception _ nil))))
+
+;; Get icon width
+(defn icon-width [icon]
+  (when icon
+    (try (.width icon) (catch Exception _ nil))))
+
+;; Get icon height
+(defn icon-height [icon]
+  (when icon
+    (try (.height icon) (catch Exception _ nil))))
+
+;; Get icon texture coordinates (if available)
+(defn icon-texture [icon]
+  (when icon
+    (try (.texture icon) (catch Exception _ nil))))
+
+;; Get icon sprite sheet information
+;; Icons are cropped from sprite sheets, this function returns the sheet and tile index
+(defn icon-sheet-info [icon]
+  (when icon
+    (try
+      ;; Check if it's an IconSheet (which has sheet and tile fields)
+      (let [icon-class (class icon)
+            icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
+        (if (= icon-sheet-class icon-class)
+          ;; It's an IconSheet, get the sheet and tile
+          (let [sheet-field (.getDeclaredField icon-sheet-class "sheet")
+                tile-field (.getDeclaredField icon-sheet-class "tile")]
+            (.setAccessible sheet-field true)
+            (.setAccessible tile-field true)
+            (let [sheet (.get sheet-field icon)
+                  tile (.get tile-field icon)]
+              {:is-sheet true
+               :sheet sheet
+               :tile-index tile
+               :total-tiles (try (.tiles sheet) (catch Exception _ nil))
+               :sheet-size (try (.size sheet) (catch Exception _ nil))}))
+          ;; Not an IconSheet, return basic info
+          {:is-sheet false
+           :note "Icon is not from a sprite sheet"}))
+      (catch Exception e
+        {:error (.getMessage e)}))))
+
+;; Get the tile index from an IconSheet icon
+(defn icon-tile-index [icon]
+  (when icon
+    (try
+      (let [icon-class (class icon)
+            icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
+        (if (= icon-sheet-class icon-class)
+          (let [tile-field (.getDeclaredField icon-sheet-class "tile")]
+            (.setAccessible tile-field true)
+            (.get tile-field icon))
+          nil))
+      (catch Exception _ nil))))
+
+;; Get the TILE_SHEET from an IconSheet icon
+(defn icon-sheet [icon]
+  (when icon
+    (try
+      (let [icon-class (class icon)
+            icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
+        (if (= icon-sheet-class icon-class)
+          (let [sheet-field (.getDeclaredField icon-sheet-class "sheet")]
+            (.setAccessible sheet-field true)
+            (.get sheet-field icon))
+          nil))
+      (catch Exception _ nil))))
+
+;; Get comprehensive icon information including sprite sheet details
+(defn icon-full-info [icon]
+  (when icon
+    (merge (icon-info icon)
+           (icon-sheet-info icon))))
+
+;; Get all available icon fields from icons-small
+(defn list-small-icon-fields []
+  (let [icons-s (icons-small)
+        fields (.getFields (class icons-s))
+        public-fields (filter #(java.lang.reflect.Modifier/isPublic (.getModifiers %)) fields)]
+    (map #(.getName %) public-fields)))
+
+;; Get all available icon fields from icons-medium
+(defn list-medium-icon-fields []
+  (let [icons-m (icons-medium)
+        fields (.getFields (class icons-m))
+        public-fields (filter #(java.lang.reflect.Modifier/isPublic (.getModifiers %)) fields)]
+    (map #(.getName %) public-fields)))
+
+;; Get all available icon fields from icons-large
+(defn list-large-icon-fields []
+  (let [icons-l (icons-large)
+        fields (.getFields (class icons-l))
+        public-fields (filter #(java.lang.reflect.Modifier/isPublic (.getModifiers %)) fields)]
+    (map #(.getName %) public-fields)))
+
+(comment
+  ;; Get icon and inspect it
+  (def sword-icon (icon-small "sword"))
+  
+  ;; Inspect icon properties
+  (icon-info sword-icon)
+  ;; => {:class init.sprite.UI.Icons$S$IconS, :size 16, :width 16, :height 16, :has-texture true}
+  
+  ;; Get sprite sheet information (icons are cropped from sprite sheets)
+  (icon-sheet-info sword-icon)
+  ;; => {:is-sheet true, :sheet TILE_SHEET, :tile-index 25, :total-tiles 100, :sheet-size 16}
+  
+  (icon-tile-index sword-icon) ; => 25 (the tile index in the sprite sheet)
+  (icon-sheet sword-icon)      ; => TILE_SHEET object
+  
+  ;; Get full information including sprite sheet details
+  (icon-full-info sword-icon)
+  ;; => Complete information about the icon including sprite sheet data
+  
+  ;; List all available icon names
+  (take 10 (list-small-icon-fields))
+  ;; => ("magnifier" "minifier" "minimap" "arrowUp" ...)
+  
+  (take 10 (list-medium-icon-fields))
+  (take 10 (list-large-icon-fields))
+  
+  ;; Direct field access (alternative to icon-small function)
+  (.-sword (icons-small))
+  (.-sword (icons-medium))
+  (.-sword (icons-large))
+  :rcf)
+
+;; Get a specific medium icon by field name
+(defn icon-medium [icon-name]
+  (let [icons-m (icons-medium)]
+    (try
+      (let [field (.getField (class icons-m) icon-name)]
+        (.get field icons-m))
+      (catch Exception _
+        nil))))
+
+;; Get a specific large icon by field name
+(defn icon-large [icon-name]
+  (let [icons-l (icons-large)]
+    (try
+      (let [field (.getField (class icons-l) icon-name)]
+        (.get field icons-l))
+      (catch Exception _
+        nil))))
+
+;; ============================================
+;; Game Sprites (游戏内建筑/物体)
+;; ============================================
+
+;; Get the GameSheets instance
+(defn game-sheets []
+  (SPRITES/GAME))
+
+;; Get sheets for a specific type and file
+;; type should be a SheetType (e.g., SheetType.s1x1)
+;; file is the sprite file name
+(defn get-sheets [type file]
+  (let [game (game-sheets)]
+    (.sheets game type file nil)))
+
+;; Get raw TILE_SHEET for a specific type and file
+(defn get-raw-sheets [type file]
+  (let [game (game-sheets)]
+    (.raws game type file nil)))
+
+;; Get a single raw sprite by type, file, and row
+(defn get-raw-sprite [type file row]
+  (let [game (game-sheets)]
+    (.raw game type file row nil)))
+
+;; Get overlay sprite for a type
+(defn get-overlay [type]
+  (let [game (game-sheets)]
+    (.overlay game type)))
+
+;; ============================================
+;; Textures (纹理)
+;; ============================================
+
+;; Get the Textures instance
+(defn textures []
+  (SPRITES/textures))
+
+;; Get specific texture by field name
+;; Available textures: dis_big, dis_small, dis_tiny, dis_low, fire, water, bumps, dots
+;; Example: (texture "fire") or use convenience functions like (texture-fire)
+(defn texture [texture-name]
+  (let [tex (textures)]
+    (try
+      (let [field (.getField (class tex) texture-name)]
+        (.get field tex))
+      (catch Exception _
+        nil))))
+
+;; Convenience functions for common textures
+(defn texture-fire []
+  (.-fire (textures)))
+
+(defn texture-water []
+  (.-water (textures)))
+
+(defn texture-bumps []
+  (.-bumps (textures)))
+
+(defn texture-dots []
+  (.-dots (textures)))
+
+(defn texture-displacement-big []
+  (.-dis_big (textures)))
+
+(defn texture-displacement-small []
+  (.-dis_small (textures)))
+
+(defn texture-displacement-tiny []
+  (.-dis_tiny (textures)))
+
+(defn texture-displacement-low []
+  (.-dis_low (textures)))
+
+;; ============================================
+;; Other Sprite Resources
+;; ============================================
+
+;; Get construction/overlay sprites
+(defn cons-sprites []
+  (SPRITES/cons))
+
+;; Get settlement sprites
+;; Note: SPRITES.sett() method does not exist in the current codebase
+;; Settlement sprites are accessed through game-sheets() or other sprite accessors
+;; This function is commented out as the method doesn't exist
+(comment
+  (defn settlement-sprites []
+    ;; SPRITES/sett does not exist
+    nil)
+  :rcf)
+
+;; Get load screen sprite
+(defn load-screen []
+  (SPRITES/loadScreen))
+
+;; Get special sprites
+(defn special-sprites []
+  (SPRITES/specials))
+
+;; Get UI image maker
+(defn ui-image []
+  (UI/image))
+
+;; Get UI image by path
+(defn get-ui-image [path]
+  (let [image-maker (ui-image)]
+    (.get image-maker path)))
+
+(comment
+  ;; Examples:
+  
+  ;; Get icons
+  (icons)
+  (icons-small)
+  (icons-medium)
+  (icons-large)
+  
+  ;; Get specific icons (use field name as string)
+  (icon-small "sword")
+  (icon-medium "sword")
+  (icon-large "sword")
+  
+  ;; Or access directly via field access
+  (.-sword (icons-small))
+  (.-sword (icons-medium))
+  (.-sword (icons-large))
+  
+  ;; Get game sprites
+  (game-sheets)
+  
+  ;; Get textures
+  (textures)
+  (texture-fire)
+  (texture-water)
+  (texture "fire")
+  
+  ;; Get game sprite sheets (requires SheetType)
+  ;; Example usage (commented out as it requires specific sprite files):
+  ;; (import '[init.sprite.game SheetType])
+  ;; (get-sheets SheetType/s1x1 "Building")
+  ;; (get-overlay SheetType/s1x1)
+  
+  ;; Get raw sprite sheets
+  ;; (get-raw-sheets SheetType/s1x1 "Building")
+  ;; (get-raw-sprite SheetType/s1x1 "Building" 0)
+  
+  ;; Get other resources
+  (cons-sprites)
+  ;; (settlement-sprites)  ; Note: SPRITES.sett() does not exist
+  (load-screen)
+  (special-sprites)
+  
+  :rcf)
