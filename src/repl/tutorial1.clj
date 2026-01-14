@@ -146,8 +146,9 @@
 ;; width, height: dimensions of the warehouse (in tiles)
 ;; material-name: building material name (e.g., "WOOD", "STONE")
 ;; upgrade: upgrade level (default 0)
-(defn create-warehouse [center-x center-y width height & {:keys [material-name upgrade] 
-                                                           :or {material-name "WOOD" upgrade 0}}]
+;; place-furniture: if true, manually place furniture items (default true)
+(defn create-warehouse [center-x center-y width height & {:keys [material-name upgrade place-furniture] 
+                                                           :or {material-name "WOOD" upgrade 0 place-furniture true}}]
   (let [rooms (SETT/ROOMS)
         stockpile-constructor (get-stockpile-constructor)
         tbuilding (get-building-material material-name)  ; Returns TBuilding (not Structure)
@@ -158,14 +159,51 @@
         construction-init (ConstructionInit. upgrade stockpile-constructor tbuilding degrade state)
         
         ;; Get temporary area
-        tmp (.tmpArea rooms "warehouse")]
+        tmp (.tmpArea rooms "warehouse")
+        
+        ;; Calculate start coordinates
+        start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))]
     
     ;; Set the building area
-    (let [start-x (- center-x (quot width 2))
-          start-y (- center-y (quot height 2))]
-      (doseq [y (range height)
-              x (range width)]
-        (.set tmp (+ start-x x) (+ start-y y))))
+    (doseq [y (range height)
+            x (range width)]
+      (.set tmp (+ start-x x) (+ start-y y)))
+    
+    ;; Place furniture (crates) - MUST be done before createClean
+    (when place-furniture
+      (let [fdata (.fData rooms)
+            ;; Get furniture items from the constructor's placement groups
+            furnisher-groups (.pgroups stockpile-constructor)
+            ;; Get the first placement group (usually contains crate items)
+            first-group (when (> (.size furnisher-groups) 0)
+                          (.get furnisher-groups 0))
+            ;; Get the first furniture item from the group (usually a 2x1 crate)
+            furnisher-item (when first-group
+                             (try
+                               (.item first-group 0 0)
+                               (catch Exception _e nil)))
+            room-instance (.room tmp)]
+        
+        (when furnisher-item
+          ;; Place furniture items in a pattern across the warehouse
+          ;; Furniture items are typically 2x1, so we place them every 2 tiles horizontally
+          (doseq [y (range start-y (+ start-y height))
+                  x (range start-x (+ start-x width) 2)]  ; Step by 2 for 2x1 items
+            (let [item-width (.width furnisher-item)
+                  item-height (.height furnisher-item)
+                  ;; Check if item fits in the remaining space
+                  fits-width (<= (+ x item-width) (+ start-x width))
+                  fits-height (<= (+ y item-height) (+ start-y height))]
+              (when (and fits-width fits-height)
+                ;; Check if placement is valid (not already occupied)
+                (try
+                  (let [existing-item (.get (.item fdata) x y)]
+                    (when (nil? existing-item)
+                      (.itemSet fdata x y furnisher-item room-instance)))
+                  (catch Exception _e
+                    ;; Skip if placement fails
+                    nil))))))))
     
     ;; Create the construction site
     (.createClean (.construction rooms) tmp construction-init)
@@ -177,7 +215,8 @@
      :center-x center-x
      :center-y center-y
      :width width
-     :height height}))
+     :height height
+     :furniture-placed place-furniture}))
 
 ;; Create a warehouse using update-once (ensures it happens in a single frame)
 (defn create-warehouse-once [center-x center-y width height & {:keys [material-name upgrade] 
@@ -190,19 +229,21 @@
 
 ;; Example usage:
 (comment
-  ;; Warehouse creation
-  ;; Create a 5x5 warehouse at tile (100, 100) using wood
-  (THRONE/coo)
-
-  (create-warehouse-once 261 400 5 5)
-  ;; move camera to the warehouse
-  (move-camera-to-tile 100 100)
+  ;; Warehouse creation with furniture
+  ;; Create a 5x5 warehouse at tile (261, 400) using wood (with furniture)
+  (create-warehouse-once 261 430 5 5)
+  
+  ;; Create warehouse without furniture (furniture will be auto-placed by game)
+  (create-warehouse-once 280 400 5 5 :place-furniture false)
   
   ;; Create a 3x3 warehouse at tile (120, 120) using stone
   (create-warehouse-once 120 120 3 3 :material-name "STONE")
   
   ;; Create a larger warehouse (7x7) at tile (130, 130)
   (create-warehouse-once 130 130 7 7)
+  
+  ;; Check furniture in the warehouse
+  (warehouse-furniture-info 261 400 5 5)
   
   :rcf)
 
