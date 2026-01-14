@@ -1,12 +1,22 @@
-# Building a Furnace (火炉) / Smelter
+# Building a Hearth (火炉) and Smelter (冶金厂)
 
-This guide explains how to programmatically build a furnace (smelter) in Songs of Syx using Clojure code. In the game, furnaces are part of the "Refiner" room category, specifically the `ROOM_REFINER_SMELTER`.
+This guide explains how to programmatically build a hearth (火炉) and smelter (冶金厂) in Songs of Syx using Clojure code.
 
 ## Overview
 
-Furnaces (smelters) in Songs of Syx are refiner rooms that process raw materials (like ore) into refined products (like metal). They are part of the `ROOM_REFINER` system, which includes several types:
+**Important Distinction:**
+- **火炉 (Hearth)** - A health service room (`ROOM_HEARTH`) that provides warmth and comfort. Located in the "健康" (Health) category.
+- **冶金厂 (Smelter)** - An industrial refiner room (`ROOM_REFINER_SMELTER`) that processes ore into metal. Located in the "Refiner" category.
 
-- **SMELTER** - Furnace for smelting ore into metal (火炉)
+### Hearth (火炉) - Health Service Room
+
+The hearth is a 1x1 tile health service room that provides warmth and comfort to citizens. It's part of the health service system.
+
+### Smelter (冶金厂) - Refiner Room
+
+Smelters are refiner rooms that process raw materials (like ore) into refined products (like metal). They are part of the `ROOM_REFINER` system, which includes several types:
+
+- **SMELTER** - Smelter for smelting ore into metal (冶金厂)
 - **BAKERY** - Bakes bread
 - **BREWERY** - Brews beverages
 - **COALER** - Processes coal
@@ -14,11 +24,180 @@ Furnaces (smelters) in Songs of Syx are refiner rooms that process raw materials
 
 ## Key Classes
 
+### For Hearth (火炉)
+- `settlement.room.service.hearth.ROOM_HEARTH` - Hearth room blueprint class
+- `settlement.room.service.hearth.HearthInstance` - Individual hearth instance
+- `settlement.room.service.hearth.Constructor` - Constructor for hearth placement
+- `settlement.main.SETT.ROOMS().HEARTH` - The hearth room blueprint
+
+### For Smelter (冶金厂)
 - `settlement.room.industry.refiner.ROOM_REFINER` - Base refiner room blueprint class
 - `settlement.room.industry.refiner.RefinerInstance` - Individual refiner instance
 - `settlement.room.industry.refiner.Constructor` - Constructor for refiner placement
 - `settlement.main.SETT.ROOMS().REFINERS` - List of all refiner room types
 - `settlement.main.SETT.ROOMS().collection` - Collection for looking up rooms by key
+
+## Building a Hearth (火炉)
+
+The hearth is a health service room that provides warmth and comfort. It's accessed directly via `SETT.ROOMS().HEARTH`. Unlike simple 1x1 rooms, hearths support multiple sizes and automatically place furniture based on the area size.
+
+### Creating a Hearth
+
+```clojure
+(ns game.hearth
+  (:require 
+   [repl.utils :as utils]
+   [game.common :refer [get-building-material]])
+  (:import 
+   [settlement.main SETT]
+   [settlement.room.main.construction ConstructionInit]))
+
+;; Get the hearth room blueprint
+(defn get-hearth []
+  (let [rooms (SETT/ROOMS)]
+    (.-HEARTH rooms)))
+
+;; Select furniture size based on area
+;; Hearth has 3 furniture sizes: 6x6 (size 0), 10x10 (size 1), 14x14 (size 2)
+;; We choose the largest size that fits within the area
+(defn select-hearth-furniture-size [area-width area-height]
+  ;; Furniture sizes: 6x6=36, 10x10=100, 14x14=196
+  (let [sizes [{:size 0 :width 6 :height 6}
+               {:size 1 :width 10 :height 10}
+               {:size 2 :width 14 :height 14}]
+        fitting-sizes (filter (fn [{:keys [width height]}]
+                                (and (<= width area-width) (<= height area-height)))
+                              sizes)]
+    (if (empty? fitting-sizes)
+      0  ; Default to smallest size
+      (:size (last (sort-by :size fitting-sizes))))))
+
+;; Create a hearth at specified location
+;; center-x, center-y: center tile coordinates
+;; width, height: dimensions of the hearth (e.g., 5x3)
+;; The function automatically selects and places the appropriate furniture item based on area size
+;; material-name: building material name (e.g., "WOOD", "STONE")
+;; upgrade: upgrade level (default 0)
+(defn create-hearth [center-x center-y width height & {:keys [material-name upgrade] 
+                                                        :or {material-name "WOOD" upgrade 0}}]
+  (let [rooms (SETT/ROOMS)
+        hearth-blueprint (get-hearth)
+        _ (when (nil? hearth-blueprint)
+            (throw (Exception. "Could not find HEARTH room. Make sure the game has loaded.")))
+        hearth-constructor (.constructor hearth-blueprint)
+        tbuilding (get-building-material material-name)
+        construction-init (ConstructionInit. upgrade hearth-constructor tbuilding 0 nil)
+        tmp (.tmpArea rooms "hearth")
+        
+        ;; Get furniture group and select appropriate size
+        furnisher-groups (.pgroups hearth-constructor)
+        first-group (when (> (.size furnisher-groups) 0)
+                      (.get furnisher-groups 0))
+        furniture-size (select-hearth-furniture-size width height)
+        furnisher-item (when first-group
+                         (.item first-group furniture-size 0))  ; rot=0
+        _ (when (nil? furnisher-item)
+            (throw (Exception. "Could not get furniture item for hearth")))
+        
+        ;; Calculate furniture placement position (center of the area)
+        start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))
+        furniture-x (- center-x (quot (.width furnisher-item) 2))
+        furniture-y (- center-y (quot (.height furnisher-item) 2))]
+    
+    ;; Set the building area
+    (doseq [y (range height)
+            x (range width)]
+      (.set tmp (+ start-x x) (+ start-y y)))
+    
+    ;; Place furniture BEFORE createClean (this is the key step!)
+    ;; This matches how the game menu creates hearths - furniture is placed first
+    (let [fdata (.fData rooms)
+          room-instance (.room tmp)]
+      (.itemSet fdata furniture-x furniture-y furnisher-item room-instance))
+    
+    ;; Create the construction site
+    (.createClean (.construction rooms) tmp construction-init)
+    
+    ;; Clear temporary area
+    (.clear tmp)
+    
+    {:success true
+     :center-x center-x
+     :center-y center-y
+     :width width
+     :height height
+     :room-type "HEARTH"
+     :furniture-size furniture-size
+     :furniture-width (.width furnisher-item)
+     :furniture-height (.height furnisher-item)}))
+
+;; Create using update-once
+(defn create-hearth-once [center-x center-y width height & {:keys [material-name upgrade] 
+                                                              :or {material-name "WOOD" upgrade 0}}]
+  (utils/update-once 
+   (fn [_ds]
+     (create-hearth center-x center-y width height 
+                   :material-name material-name 
+                   :upgrade upgrade))))
+```
+
+**Source References:**
+- `settlement.main.SETT.ROOMS().HEARTH` - Line 165 in `ROOMS.java`
+- `settlement.room.service.hearth.ROOM_HEARTH` - Hearth room class
+- `settlement.room.service.hearth.Constructor` - Constructor (lines 112-144 show multiple furniture items of different sizes)
+  - 6x6 furniture item (size 0) - 3x3 tiles
+  - 10x10 furniture item (size 1) - 5x5 tiles
+  - 14x14 furniture item (size 2) - 7x7 tiles
+  - 28x28 furniture item (size 3) - 7x7 tiles, wider pattern (not used in placement groups)
+- `settlement.room.main.placement.PlacerItemSingle.place()` - Shows how menu places furniture before creating room
+
+**Important Notes:**
+- **Furniture Placement**: Unlike some rooms, hearths require furniture to be placed **before** calling `createClean()`. This matches the game menu's behavior.
+- **Automatic Size Selection**: The function automatically selects the largest furniture size that fits within the specified area:
+  - Size 0 (6x6) for areas >= 6x6
+  - Size 1 (10x10) for areas >= 10x10
+  - Size 2 (14x14) for areas >= 14x14
+- **Multiple Sizes**: Hearth supports multiple sizes - you can create 5x3, 7x7, or any size that fits the furniture
+- Even though `usesArea()` returns `false`, you still need to set an area in `TmpArea`
+- Common sizes: 5x3 (uses 10x10 furniture item), 7x7 (uses 14x14 furniture item), etc.
+- Hearth is a **health service room** - Provides warmth and comfort
+- Can be built **outdoors** - `mustBeIndoors()` returns `false`
+
+### Example Usage
+
+```clojure
+;; Create a 5x3 hearth at center (271, 430) using wood
+;; Automatically selects size 1 (10x10 furniture item) and places it
+(create-hearth-once 271 430 5 3)
+;; Returns: {:success true, :furniture-size 1, :furniture-width 10, :furniture-height 10, ...}
+
+;; Create a larger hearth (7x7)
+;; Automatically selects size 2 (14x14 furniture item) and places it
+(create-hearth-once 300 400 7 7)
+;; Returns: {:success true, :furniture-size 2, :furniture-width 14, :furniture-height 14, ...}
+
+;; Create a hearth using stone
+(create-hearth-once 250 250 5 3 :material-name "STONE")
+
+;; Create a small hearth (6x6)
+;; Automatically selects size 0 (6x6 furniture item)
+(create-hearth-once 200 200 6 6)
+;; Returns: {:success true, :furniture-size 0, :furniture-width 6, :furniture-height 6, ...}
+```
+
+### How It Works
+
+The hearth creation process follows the same pattern as the game menu:
+
+1. **Select Furniture Size**: Based on the area dimensions, the function selects the largest furniture item that fits (6x6, 10x10, or 14x14)
+2. **Set Building Area**: The `TmpArea` is set to cover the specified width and height
+3. **Place Furniture**: **Before** creating the construction site, the furniture is placed using `fData.itemSet()`. This is crucial - furniture must be placed first!
+4. **Create Construction**: Finally, `createClean()` is called to create the construction site with the furniture already in place
+
+This matches the behavior of `PlacerItemSingle.place()` in the game's placement system, ensuring that programmatically created hearths behave identically to menu-created ones.
+
+## Building a Smelter (冶金厂)
 
 ## Finding the Smelter Room Blueprint
 
@@ -347,28 +526,48 @@ Since smelters must be indoors, you'll need to build walls around them. You can 
 
 ## Common Patterns
 
-### Pattern 1: Simple Smelter Creation
+### Pattern 1: Simple Hearth Creation
+```clojure
+;; Create a 5x3 hearth at center coordinates
+(create-hearth-once 200 200 5 3)
+```
+
+### Pattern 2: Hearth with Custom Material
+```clojure
+(create-hearth-once 200 200 5 3 :material-name "STONE")
+```
+
+### Pattern 3: Larger Hearth
+```clojure
+;; Create a 7x7 hearth
+(create-hearth-once 250 250 7 7)
+```
+
+### Pattern 3: Simple Smelter Creation
 ```clojure
 (create-smelter-once 200 200 5 5)
 ```
 
-### Pattern 2: Smelter with Custom Material
+### Pattern 4: Smelter with Custom Material
 ```clojure
 (create-smelter-once 200 200 5 5 :material-name "STONE")
 ```
 
-### Pattern 3: Generic Refiner Creation
+### Pattern 5: Generic Refiner Creation
 ```clojure
-(create-refiner-once "SMELTER" 200 200 5 5)
-(create-refiner-once "BAKERY" 250 250 4 4)
+(create-refiner-once "REFINER_SMELTER" 200 200 5 5)
+(create-refiner-once "REFINER_BAKERY" 250 250 4 4)
 ```
 
-### Pattern 4: Finding Refiners
+### Pattern 6: Finding Rooms
 ```clojure
-;; Find by key
-(find-refiner-by-key "SMELTER")
+;; Get hearth
+(get-hearth)
 
-;; List all types
+;; Find refiner by key
+(find-refiner-by-key "REFINER_SMELTER")
+
+;; List all refiner types
 (all-refiner-types)
 ```
 
