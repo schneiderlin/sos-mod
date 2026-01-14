@@ -356,20 +356,30 @@
 ;;   - direction: 0-5 (6 directions for lying sprites)
 (defn get-tile-index [sheet-type action direction]
   (try
-    (let [NR 8  ; Number of directions for sheet
+    (let [NR 1  ; Number of directions for sheet
           ;; Base indices for sheet actions (from HSpriteConst)
-          base-indices {:head (* 0 NR)
-                        :torso-still (* 0 NR)
-                        :torso-right (* 1 NR)
-                        :torso-left (* 2 NR)
-                        :torso-carry (* 3 NR)
-                        :tunic (* 2 NR)
-                        :feet-none (* 0 NR)
-                        :feet-right (* 1 NR)
-                        :feet-left (* 3 NR)
-                        :shadow (* 1 NR)}]
+          ;; Base indices from HSpriteConst.java (in order of definition): 
+          base-indices {:feet-none (* 0 NR)      ; 0
+                        :feet-right (* 1 NR)     ; 8
+                        :feet-right2 (* 2 NR)    ; 16
+                        :feet-left (* 3 NR)      ; 24
+                        :feet-left2 (* 4 NR)     ; 32
+                        :tunic (* 5 NR)          ; 40
+                        :torso-still (* 6 NR)     ; 48
+                        :torso-right (* 7 NR)     ; 56
+                        :torso-right2 (* 8 NR)    ; 64
+                        :torso-right3 (* 9 NR)   ; 72
+                        :torso-left (* 10 NR)    ; 80
+                        :torso-left2 (* 11 NR)   ; 88
+                        :torso-left3 (* 12 NR)   ; 96
+                        :torso-carry (* 13 NR)    ; 104
+                        :torso-out (* 14 NR)     ; 112
+                        :torso-out2 (* 15 NR)    ; 120
+                        :head (* 16 NR)          ; 128
+                        :shadow (* 17 NR)}]      ; 136
       (case sheet-type
         :sheet (let [base (get base-indices action 0)]
+                 (println "base:" base)
                  (+ base (mod direction NR)))
         :lay (mod direction 6)  ; Lay sheet has 6 sprites
         0))
@@ -377,22 +387,7 @@
       (println "Error calculating tile index:" (.getMessage e))
       0)))
 
-(comment
-  (def base-indices
-    (let [NR 8]
-      {:head (* 0 NR)
-       :torso-still (* 0 NR)
-       :torso-right (* 1 NR)
-       :torso-left (* 2 NR)
-       :torso-carry (* 3 NR)
-       :tunic (* 2 NR)
-       :feet-none (* 0 NR)
-       :feet-right (* 1 NR)
-       :feet-left (* 3 NR)
-       :shadow (* 1 NR)}))
-  
-  (get base-indices :torso-still)
-
+(comment 
   (get-tile-index :sheet :head 0)
   (get-tile-index :sheet :torso-right 0)
   :rcf)
@@ -580,8 +575,8 @@
 
 (comment 
   (export-race-sprite :sheet "Human" :head 0 "output/head_0.png")
-
-  (export-race-sprite :sheet "Human" :torso-right 3 "output/head_3.png")
+  (export-race-sprite :sheet "Human" :tunic 0 "output/tunic_0.png")
+  (export-race-sprite :sheet "Human" :torso-still 0 "output/torso-still_0.png") 
   :rcf)
 
 (comment
