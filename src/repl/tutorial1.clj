@@ -2,6 +2,7 @@
   (:require
    [repl.utils :as utils])
   (:import
+   [game GAME]
    [view.main VIEW]
    [settlement.main SETT]
    [settlement.room.main.construction ConstructionInit]
@@ -192,10 +193,7 @@
   ;; Warehouse creation
   ;; Create a 5x5 warehouse at tile (100, 100) using wood
   (THRONE/coo)
-  
-  ;; 换了一个存档, utils 里面的是不是要重置?
-  (utils/update-once (fn [_ds] (println "test" _ds)))
-  
+
   (create-warehouse-once 261 400 5 5)
   ;; move camera to the warehouse
   (move-camera-to-tile 100 100)
@@ -220,4 +218,82 @@
 (comment
   ;; Move camera to throne
   (move-to-throne)
+  :rcf)
+
+;; ============================================================================
+;; Time Flow Control
+;; ============================================================================
+
+;; Get the GameSpeed instance
+(defn get-game-speed []
+  (GAME/SPEED))
+
+;; Set game speed (0 = paused, 1 = normal, 5 = 5x, 25 = 25x, etc.)
+(defn set-time-speed [speed]
+  (let [game-speed (get-game-speed)]
+    (.speedSet game-speed speed)))
+
+;; Get current time speed
+(defn get-time-speed []
+  (let [game-speed (get-game-speed)]
+    (.speed game-speed)))
+
+;; Get target time speed (what speed is set to, before any adjustments)
+(defn get-time-speed-target []
+  (let [game-speed (get-game-speed)]
+    (.speedTarget game-speed)))
+
+;; Pause the game (sets speed to 0)
+(defn pause-time []
+  (set-time-speed 0))
+
+;; Resume time at normal speed (1x)
+(defn resume-time []
+  (set-time-speed 1))
+
+;; Toggle pause (if paused, resume to previous speed; if running, pause)
+(defn toggle-pause []
+  (let [game-speed (get-game-speed)]
+    (.togglePause game-speed)))
+
+;; Set time to specific speeds (matching the game's speed buttons)
+(defn time-speed-0x
+  "Pause (0x speed)"
+  []
+  (set-time-speed 0))
+
+(defn time-speed-1x
+  "Normal speed (1x)"
+  []
+  (set-time-speed 1))
+
+(defn time-speed-5x
+  "Fast speed (5x)"
+  []
+  (set-time-speed 5))
+
+(defn time-speed-25x
+  "Very fast speed (25x)"
+  []
+  (set-time-speed 25))
+
+(comment
+  ;; Time flow control examples
+  (pause-time)                    ; Pause the game
+  (resume-time)                   ; Resume at normal speed
+  (toggle-pause)                  ; Toggle pause/resume
+  
+  ;; Set specific speeds
+  (time-speed-0x)                  ; Pause (0x)
+  (time-speed-1x)                  ; Normal (1x)
+  (time-speed-5x)                  ; Fast (5x)
+  (time-speed-25x)                 ; Very fast (25x)
+  
+  ;; Custom speed
+  (set-time-speed 10)              ; Set to 10x speed
+  
+  ;; Get current speed
+  (get-time-speed)                 ; Get actual current speed
+  (get-time-speed-target)          ; Get target speed setting
+  
   :rcf)
