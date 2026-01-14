@@ -129,7 +129,7 @@ public final class InstanceScript implements SCRIPT.SCRIPT_INSTANCE {
 
 ### update-once Pattern
 
-The `update-once` function executes a callback once in the next update cycle:
+The `update-once` function executes a callback once in the next update cycle. It works with or without the mod system:
 
 ```clojure
 (update-once (fn [ds] 
@@ -140,30 +140,72 @@ The `update-once` function executes a callback once in the next update cycle:
 - Generates unique consumer IDs to avoid conflicts
 - Automatically removes itself after execution
 - Uses try/finally to ensure cleanup even on exceptions
+- Automatically detects if InstanceScript is available
+- Falls back to standalone updater if mod isn't loaded
 
 ## Standalone Updater (Without Mod System)
 
-If the mod is not loaded, `InstanceScript.update()` is never called by the game, so consumers won't execute. However, we can create a standalone updater that hooks directly into the ScriptEngine.
+If the mod is not loaded, `InstanceScript.update()` is never called by the game, so consumers won't execute. However, we can create a standalone updater that hooks directly into the ScriptEngine using reflection.
 
-### Approach
+### How It Works
 
-1. **Access ScriptEngine**: Use `GAME.script()` to get the ScriptEngine instance
-2. **Create Custom SCRIPT_INSTANCE**: Implement `SCRIPT.SCRIPT_INSTANCE` interface
-3. **Inject into ScriptEngine**: Use reflection to add our instance to ScriptEngine's `loads` list
+The standalone updater implementation in `src/repl/utils.clj`:
+
+1. **Detects InstanceScript Availability**: Checks if InstanceScript is registered in ScriptEngine's loads
+2. **Creates Custom SCRIPT_INSTANCE**: Uses Java Proxy to dynamically implement the interface
+3. **Injects into ScriptEngine**: Uses reflection to create a Script object and add it to ScriptEngine's loads list
+4. **Automatic Fallback**: If InstanceScript isn't available, automatically uses standalone updater
+
+### Implementation Details
+
+```clojure
+;; The system automatically detects if InstanceScript is loaded
+(add-updater "my-key" (fn [ds] (println "Update:" ds)))
+
+;; Works with or without mod:
+;; - If mod loaded: Uses InstanceScript (faster, cleaner)
+;; - If mod not loaded: Uses standalone updater (hooks into ScriptEngine)
+```
+
+**Key Functions:**
+- `add-updater [key f]` - Hybrid: tries InstanceScript, falls back to standalone
+- `add-standalone-updater [key f]` - Direct standalone updater (bypasses InstanceScript)
+- `remove-updater [key]` - Remove updater (works with both systems)
+- `update-once [f]` - Execute function once (works with both systems)
+
+### How Detection Works
+
+**Important**: `InstanceScript/addConsumer` will always succeed (it just adds to a static Map), but that doesn't mean consumers will execute. The system checks if InstanceScript is actually registered in ScriptEngine:
+
+```clojure
+(defn- instancescript-available? []
+  "Check if InstanceScript is actually loaded and will be called by the game."
+  (some? (find-instancescript-in-loads)))
+```
+
+This ensures updaters execute even when the mod isn't loaded.
+
+### Standalone Updater Registration
+
+When a standalone updater is first added:
+
+1. Creates a `SCRIPT_INSTANCE` using Java Proxy
+2. Creates a minimal `SCRIPT` implementation
+3. Creates a `ScriptLoad` wrapper
+4. Creates a `ScriptEngine$Script` object
+5. Sets the `ins` field to our custom instance
+6. Adds it to ScriptEngine's `loads` list
+
+The standalone script instance handles all interface methods:
+- `update(ds)` - Calls all registered standalone updaters
+- Other methods (`hover`, `render`, etc.) - No-ops
 
 ### Limitations
 
 - Requires reflection to access private fields
 - More complex than using InstanceScript
-- May break if game internals change
-- Still requires the mod JAR to be in classpath (for the classes to exist)
-
-### Alternative: Manual Update Polling
-
-If we can't hook into ScriptEngine, we could:
-1. Poll game state manually using a separate thread
-2. Use game events/hooks if available
-3. Hook into other game systems that update regularly
+- May break if game internals change (though unlikely)
+- Requires mod JAR in classpath (for InstanceScript class to exist, even if not loaded)
 
 ## Troubleshooting
 
@@ -174,36 +216,121 @@ If we can't hook into ScriptEngine, we could:
 - No errors, but no output
 
 **Possible Causes:**
-1. **Mod not loaded**: Check startup log for mod loading messages
-2. **Version mismatch**: Mod version folder doesn't match game version
-3. **InstanceScript not instantiated**: Mod's `createInstance()` not called
+1. **Mod not loaded and standalone updater failed**: Check if standalone updater registered successfully
+2. **ScriptEngine not initialized**: Game may not be fully loaded
+3. **Reflection access denied**: Security manager blocking reflection
 
 **Solutions:**
-1. Verify mod folder structure and `_Info.txt` version
-2. Rebuild mod with correct version in `pom.xml`
-3. Run `mvn clean package install` to rebuild and install mod
-4. Check mod is enabled in game settings
+1. Check console for "Standalone updater registered successfully" message
+2. Ensure game is fully loaded before calling `update-once`
+3. If standalone fails, try loading the mod properly (see below)
+4. Use `add-updater` which automatically handles fallback
 
-### InstanceScript Class Not Found
+### Mod Not Loading
 
 **Symptoms:**
-- `ClassNotFoundException` when calling `InstanceScript/addConsumer`
+- Mod doesn't appear in startup log
+- `instancescript-available?` returns false
 
-**Causes:**
-- Mod JAR not in classpath
-- Running game without mod support
+**Possible Causes:**
+1. **Version mismatch**: Mod version folder doesn't match game version
+2. **Missing _Info.txt**: Mod folder missing required metadata file
+3. **Wrong location**: Mod not in correct mods folder
 
 **Solutions:**
-- Ensure mod JAR is in classpath when running game
-- Use standalone updater as fallback
+1. Verify mod folder structure and `_Info.txt` version (must match game version)
+2. Rebuild mod with correct version in `pom.xml`:
+   ```xml
+   <game.version.major>70</game.version.major>
+   <game.version.minor>23</game.version.minor>
+   ```
+3. Run `mvn clean package install` to rebuild and install mod
+4. Check mod is in: `%APPDATA%/Roaming/songsofsyx/mods/Example Mod/V70/`
+5. **Note**: Even if mod doesn't load, standalone updater should still work
+
+### Standalone Updater Registration Fails
+
+**Symptoms:**
+- "Could not register standalone script with ScriptEngine" message
+- Updaters registered but never execute
+
+**Possible Causes:**
+1. ScriptEngine not initialized yet
+2. Reflection access issues
+3. ScriptLoad creation failed
+
+**Solutions:**
+1. Ensure game is fully loaded before registering updaters
+2. Check error message for specific failure point
+3. Try using `add-updater` which handles errors gracefully
+4. If all else fails, ensure mod is loaded properly
 
 ## Best Practices
 
-1. **Always use unique consumer IDs**: Use counters or UUIDs to avoid conflicts
-2. **Clean up consumers**: Remove consumers when done to prevent memory leaks
-3. **Handle exceptions**: Wrap update callbacks in try/catch to prevent crashes
-4. **Check mod loading**: Verify mod is loaded before relying on InstanceScript
-5. **Use update-once for one-time operations**: Prevents accidental repeated execution
+1. **Use `add-updater` or `update-once`**: These automatically handle InstanceScript vs standalone
+2. **Always use unique consumer IDs**: Use counters or UUIDs to avoid conflicts
+3. **Clean up consumers**: Remove consumers when done to prevent memory leaks
+4. **Handle exceptions**: Wrap update callbacks in try/catch to prevent crashes
+5. **Don't assume mod is loaded**: The system automatically detects and falls back
+6. **Use `update-once` for one-time operations**: Prevents accidental repeated execution
+7. **Test without mod**: Verify your code works even if mod isn't loaded
+
+## Quick Start Guide
+
+### Basic Usage
+
+```clojure
+(ns my-mod
+  (:require [repl.utils :refer [update-once add-updater remove-updater]]))
+
+;; Execute a function once in the next update cycle
+(update-once (fn [ds] 
+  (println "Delta time:" ds)))
+
+;; Add a persistent updater
+(add-updater "my-updater" 
+  (fn [ds] 
+    (when (> ds 0.1)
+      (println "Large delta:" ds))))
+
+;; Remove the updater when done
+(remove-updater "my-updater")
+```
+
+### How It Works
+
+1. **First call to `add-updater` or `update-once`**:
+   - Checks if InstanceScript is available in ScriptEngine
+   - If yes: Uses InstanceScript (mod is loaded)
+   - If no: Registers standalone updater with ScriptEngine
+
+2. **Subsequent calls**:
+   - Uses the same system (InstanceScript or standalone)
+   - All updaters execute every game frame
+
+3. **Automatic cleanup**:
+   - `update-once` automatically removes itself after execution
+   - Manual cleanup with `remove-updater`
+
+### Example: One-Time Operation
+
+```clojure
+;; Create a building once when called
+(update-once 
+  (fn [_ds]
+    (create-building 100 100)))
+```
+
+### Example: Continuous Monitoring
+
+```clojure
+;; Monitor population every frame
+(add-updater "population-monitor"
+  (fn [_ds]
+    (let [pop (get-population)]
+      (when (> pop 1000)
+        (println "Population exceeded 1000!")))))
+```
 
 ## References
 
@@ -211,5 +338,5 @@ If we can't hook into ScriptEngine, we could:
 - `sos-src/script/SCRIPT.java` - Script interface definitions
 - `sos-src/game/GAME.java` - Main game class with ScriptEngine
 - `src/main/java/your/mod/InstanceScript.java` - Our mod's script instance
-- `src/repl/utils.clj` - Clojure utilities for update mechanism
+- `src/repl/utils.clj` - Clojure utilities for update mechanism (hybrid updater implementation)
 
