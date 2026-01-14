@@ -3,7 +3,12 @@
    [init.sprite SPRITES]
    [init.sprite.UI UI]
    [init.sprite.game GameSheets SheetType]
-   [init.sprite Textures]))
+   [init.sprite Textures]
+   [init.race RACES]
+   [snake2d.util.datatypes DIR]
+   [java.awt.image BufferedImage]
+   [java.io File]
+   [javax.imageio ImageIO]))
 
 "base/data.zip/data/assets/sprite/里面有各种 sprite sheet"
 
@@ -323,6 +328,165 @@
 (defn get-ui-image [path]
   (let [image-maker (ui-image)]
     (.get image-maker path)))
+
+;; ============================================
+;; Race Sprite Functions (种族 Sprite 函数)
+;; ============================================
+
+(defn get-race [race-key]
+  (try
+    (let [all-races (RACES/all)
+          key-upper (.toUpperCase race-key)]
+      (first (filter #(= key-upper (.key %)) all-races)))
+    (catch Exception e
+      (println "Error getting race:" (.getMessage e))
+      nil)))
+
+(comment
+  (get-race "Human")
+  :rcf)
+
+;; Get race sprite sheet (sheet or lay)
+;; sheet-type: :sheet (站立/行走) or :lay (躺下)
+;; race-key: race name (e.g., "Human")
+;; adult: true for adult, false for child (default: true)
+(defn get-race-sheet [sheet-type race-key & {:keys [adult] :or {adult true}}]
+  (try
+    (let [race (get-race race-key)]
+      (when race
+        (let [appearance (.appearance race)
+              r-type (if adult (.adult appearance) (.child appearance))
+              race-sheet (.sheet r-type)]
+          (case sheet-type
+            :sheet (.sheet race-sheet)
+            :lay (.lay race-sheet)
+            nil))))
+    (catch Exception e
+      (println "Error getting race sheet:" (.getMessage e))
+      nil)))
+
+(comment
+  (get-race-sheet :sheet "Human")
+  :rcf)
+
+;; Get tile index for a direction and action
+;; For sheet (standing/walking):
+;;   - action: :head, :torso-still, :torso-right, :torso-left, :torso-carry, :tunic, :feet-none, :feet-right, :feet-left, :shadow
+;;   - direction: 0-7 (8 directions, where 0 is typically right/east)
+;; For lay (lying down):
+;;   - action: ignored (lay sheet only has direction-based sprites), pass nil
+;;   - direction: 0-5 (6 directions for lying sprites)
+(defn get-tile-index [sheet-type action direction]
+  (try
+    (let [NR 8  ; Number of directions for sheet
+          ;; Base indices for sheet actions (from HSpriteConst)
+          base-indices {:head (* 0 NR)
+                        :torso-still (* 0 NR)
+                        :torso-right (* 1 NR)
+                        :torso-left (* 2 NR)
+                        :torso-carry (* 3 NR)
+                        :tunic (* 2 NR)
+                        :feet-none (* 0 NR)
+                        :feet-right (* 1 NR)
+                        :feet-left (* 3 NR)
+                        :shadow (* 1 NR)}] 
+      (case sheet-type
+        :sheet (let [base (get base-indices action 0)]
+                 (+ base (mod direction NR)))
+        :lay (mod direction 6)  ; Lay sheet has 6 sprites
+        0))
+    (catch Exception e
+      (println "Error calculating tile index:" (.getMessage e))
+      0)))
+
+(comment
+  (def base-indices
+    (let [NR 8]
+      {:head (* 0 NR)
+       :torso-still (* 0 NR)
+       :torso-right (* 1 NR)
+       :torso-left (* 2 NR)
+       :torso-carry (* 3 NR)
+       :tunic (* 2 NR)
+       :feet-none (* 0 NR)
+       :feet-right (* 1 NR)
+       :feet-left (* 3 NR)
+       :shadow (* 1 NR)}))
+  
+  (get base-indices :torso-still)
+
+  (get-tile-index :sheet :head 0)
+  (get-tile-index :sheet :torso-right 0)
+  :rcf)
+
+;; Get texture coordinates for a tile
+(defn get-tile-texture [tile-sheet tile-index]
+  (try
+    (when tile-sheet
+      (.getTexture tile-sheet tile-index))
+    (catch Exception e
+      (println "Error getting texture:" (.getMessage e))
+      nil)))
+
+;; Get tile sheet information
+(defn tile-sheet-info [tile-sheet]
+  (when tile-sheet
+    (try
+      {:size (.size tile-sheet)
+       :tiles (.tiles tile-sheet)
+       :width (try (.width tile-sheet) (catch Exception _ nil))
+       :height (try (.height tile-sheet) (catch Exception _ nil))}
+      (catch Exception e
+        {:error (.getMessage e)}))))
+
+;; Export a sprite tile to PNG file
+;; This is a simplified version - actual implementation may need to use game's rendering system
+;; Note: Direct texture extraction may not be straightforward due to OpenGL texture management
+(defn export-sprite-to-png 
+  [tile-sheet tile-index output-path & {:keys [scale] :or {scale 1}}]
+  (try
+    (when tile-sheet
+      (let [size (.size tile-sheet)
+            scaled-size (* size scale)
+            texture (.getTexture tile-sheet tile-index)
+            _ (def !debug texture)
+            img (BufferedImage. scaled-size scaled-size BufferedImage/TYPE_INT_ARGB)
+            g (.createGraphics img)]
+        ;; Note: This is a placeholder - actual texture data extraction
+        ;; requires access to OpenGL texture data, which is complex.
+        ;; You may need to use the game's rendering system to render to a framebuffer
+        ;; and then read the pixels.
+        (println "Warning: Direct texture export not fully implemented.")
+        (println "Tile sheet size:" size)
+        (println "Tile index:" tile-index)
+        (println "Texture:" texture)
+        ;; For now, create a placeholder image
+        (.setColor g java.awt.Color/BLACK)
+        (.fillRect g 0 0 scaled-size scaled-size)
+        (.setColor g java.awt.Color/WHITE)
+        (.drawString g (str "Tile " tile-index) 10 20)
+        (.dispose g)
+        (ImageIO/write img "png" (File. output-path))
+        {:success true :path output-path :size size :tile-index tile-index}))
+    (catch Exception e
+      {:success false :error (.getMessage e)})))
+
+;; Convenience function to get and export a race sprite
+(defn export-race-sprite 
+  [sheet-type race-key action direction output-path 
+   & {:keys [adult scale] :or {adult true scale 1}}]
+  (let [tile-sheet (get-race-sheet sheet-type race-key :adult adult)
+        tile-index (get-tile-index sheet-type action direction)]
+    (if tile-sheet
+      (export-sprite-to-png tile-sheet tile-index output-path :scale scale)
+      {:success false :error "Failed to get tile sheet"})))
+
+(comment
+  !debug
+
+  (export-race-sprite :sheet "Human" :head 0 "output/head_0.png")
+  (export-race-sprite :sheet "Human" :torso-right 3 "output/head_3.png")
+  :rcf)
 
 (comment
   ;; Examples:
