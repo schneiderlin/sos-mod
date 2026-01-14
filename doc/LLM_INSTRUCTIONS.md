@@ -23,6 +23,7 @@ sos-mod/
 │       ├── refiner.clj  # Smelter and refiner room creation
 │       ├── hearth.clj   # Hearth (火炉) creation
 │       ├── well.clj     # Well (水井) creation
+│       ├── maintenance.clj # Maintenance station (维护站) creation
 │       └── common.clj   # Shared utilities (get-building-material, etc.)
 └── doc/
     └── src-code/        # Feature documentation (read as needed)
@@ -40,7 +41,7 @@ sos-mod/
 - **Key**: `VIEW/s().getWindow()` for camera access
 
 ### Building Creation
-- **Code**: `src/game/warehouse.clj`, `src/game/hearth.clj`, `src/game/well.clj`, `src/game/refiner.clj`
+- **Code**: `src/game/warehouse.clj`, `src/game/hearth.clj`, `src/game/well.clj`, `src/game/refiner.clj`, `src/game/maintenance.clj`
 - **Docs**: `doc/src-code/camera_and_building.md`, `doc/src-code/furnace_and_refiner.md`
 - **Key**: `ConstructionInit` requires `TBuilding` (use `game.common/get-building-material`)
 - **Pattern**: Always use `utils/update-once` for construction
@@ -76,6 +77,15 @@ sos-mod/
 - **Code**: `src/game/refiner.clj`
 - **Docs**: `doc/src-code/furnace_and_refiner.md`
 - **Key**: Smelter (冶金厂) and other refiner types, must be indoors
+
+### Maintenance Station (维护站)
+- **Code**: `src/game/maintenance.clj`
+- **Key**: 
+  - **Maintenance Station**: Similar to warehouse, requires walls and door
+  - **Two types of furniture**: Workbench (工作台, 5x1) and Tool (工具, 2x1/3x1/4x1)
+  - Furniture positions can be auto-calculated or manually specified
+  - Must be indoors, requires walls and door like warehouse
+  - Use `create-maintenance-once` to create with automatic furniture placement
 
 ## Common Utilities
 
