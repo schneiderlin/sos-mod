@@ -1,11 +1,12 @@
 (ns game.maintenance
   (:require 
    [repl.utils :as utils]
-   [game.common :refer [get-building-material]])
+   [game.common :refer [get-building-material array-list-resize->vec]])
   (:import 
    [settlement.main SETT]
    [settlement.room.main.construction ConstructionInit]
-   [settlement.room.main.placement UtilWallPlacability]))
+   [settlement.room.main.placement UtilWallPlacability]
+   [settlement.room.main.job ROOM_EMPLOY_AUTO]))
 
 ;; Get the janitor (maintenance station) room blueprint
 (defn get-maintenance []
@@ -352,6 +353,100 @@
      :uses-area (.usesArea constructor)
      :must-be-indoors (.mustBeIndoors constructor)
      :num-furniture-groups (.size pgroups)})
+  
+  :rcf)
+
+;; ============================================================================
+;; Maintenance station management functions
+;; ============================================================================
+
+;; Get all maintenance station instances
+(defn all-maintenance-stations []
+  (let [maintenance-room (get-maintenance)]
+    (array-list-resize->vec (.all maintenance-room))))
+
+(comment
+  (all-maintenance-stations)
+  :rcf)
+
+;; Get maintenance station at a specific tile position
+;; Returns the maintenance station instance if one exists at (x, y), nil otherwise
+(defn maintenance-station-at [x y]
+  (let [maintenance-room (get-maintenance)
+        getter (.-getter maintenance-room)]
+    (.get getter x y)))
+
+(comment
+  (maintenance-station-at 281 438)
+  :rcf)
+
+;; Get maintenance station position (center coordinates)
+;; Returns {:x x :y y} or nil if position cannot be determined
+(defn maintenance-station-position [maintenance-instance]
+  (try
+    ;; Try to get center coordinates using mX() and mY() methods
+    (let [mx (utils/invoke-method maintenance-instance "mX")
+          my (utils/invoke-method maintenance-instance "mY")]
+      (when (and mx my)
+        {:x mx :y my}))
+    (catch Exception _e
+      nil)))
+
+(comment
+  (let [stations (all-maintenance-stations)
+        first-station (first stations)]
+    (maintenance-station-position first-station))
+  :rcf)
+
+;; Check if auto-employ is enabled for a maintenance station
+(defn is-auto-employ-enabled? [maintenance-instance]
+  (let [maintenance-room (get-maintenance)]
+    (when (instance? ROOM_EMPLOY_AUTO maintenance-room)
+      (.autoEmploy maintenance-room maintenance-instance))))
+
+(comment
+  (let [stations (all-maintenance-stations)
+        first-station (first stations)]
+    (is-auto-employ-enabled? first-station))
+  :rcf)
+
+;; Enable or disable auto-employ for a maintenance station
+;; enabled: true to enable auto-employ, false to disable
+(defn set-auto-employ [maintenance-instance enabled]
+  (let [maintenance-room (get-maintenance)]
+    (when (instance? ROOM_EMPLOY_AUTO maintenance-room)
+      (.autoEmploy maintenance-room maintenance-instance enabled))))
+
+;; Enable or disable auto-employ using update-once (ensures it happens in a single frame)
+(defn set-auto-employ-once [maintenance-instance enabled]
+  (utils/update-once
+   (fn [_ds]
+     (set-auto-employ maintenance-instance enabled))))
+
+(comment
+  ;; Example usage:
+  
+  ;; Get all maintenance stations
+  (def stations (all-maintenance-stations))
+  
+  ;; Enable auto-employ for the first maintenance station
+  (let [first-station (first stations)]
+    (set-auto-employ-once first-station true))
+  
+  ;; Disable auto-employ for a specific station
+  (let [station (maintenance-station-at 281 438)]
+    (when station
+      (set-auto-employ-once station false)))
+  
+  ;; Enable auto-employ for all maintenance stations
+  (doseq [station (all-maintenance-stations)]
+    (set-auto-employ-once station true))
+  
+  ;; Check auto-employ status for all stations
+  (map (fn [station]
+         {:position (maintenance-station-position station)
+          :auto-employ (is-auto-employ-enabled? station)})
+       (all-maintenance-stations))
   
   :rcf)
 
