@@ -129,22 +129,130 @@
                  [(.toString (.name resource)) (.get crates resource warehouse)]))
           resources)))
 
+;; Aggregate crates across a set of warehouses for each resource
+;; Returns a map of resource -> total crate count
+(defn crates-by-material-warehouses [warehouses]
+  (let [tally (get-stockpile-tally)
+        crates (.crates tally)
+        resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [resource (reduce + 0
+                                  (map (fn [warehouse]
+                                         (.get crates resource warehouse))
+                                       warehouses))]))
+          resources)))
+
+;; Aggregate crates across a set of warehouses with resource names (more readable)
+(defn crates-by-material-warehouses-named [warehouses]
+  (let [tally (get-stockpile-tally)
+        crates (.crates tally)
+        resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [(.toString (.name resource))
+                  (reduce + 0
+                          (map (fn [warehouse]
+                                 (.get crates resource warehouse))
+                               warehouses))]))
+          resources)))
+
+;; Aggregate crates across ALL warehouses for each resource
+(defn crates-by-material-all-warehouses []
+  (crates-by-material-warehouses (all-warehouses)))
+
+;; Aggregate crates across ALL warehouses with resource names (more readable)
+(defn crates-by-material-all-warehouses-named []
+  (crates-by-material-warehouses-named (all-warehouses)))
+
+;; Get warehouse position (center coordinates)
+;; Returns {:x x :y y} or nil if position cannot be determined
+(defn warehouse-position [warehouse]
+  (try
+    ;; Try to get center coordinates using mX() and mY() methods
+    (let [mx (utils/invoke-method warehouse "mX")
+          my (utils/invoke-method warehouse "mY")]
+      (when (and mx my)
+        {:x mx :y my}))
+    (catch Exception _e
+      (try
+        ;; Fallback: try to get first accessible tile (fx, fy)
+        (let [fx (utils/invoke-method warehouse "fx")
+              fy (utils/invoke-method warehouse "fy")]
+          (when (and fx fy)
+            {:x fx :y fy}))
+        (catch Exception _e2
+          nil)))))
+
+;; Check if a warehouse is within a rectangular area
+;; start-x, start-y: top-left corner of the area
+;; width, height: dimensions of the area
+(defn warehouse-in-area? [warehouse start-x start-y width height]
+  (when-let [pos (warehouse-position warehouse)]
+    (and (>= (:x pos) start-x)
+         (< (:x pos) (+ start-x width))
+         (>= (:y pos) start-y)
+         (< (:y pos) (+ start-y height)))))
+
+;; Get all warehouses within a rectangular area
+(defn warehouses-in-area [start-x start-y width height]
+  (filter (fn [warehouse]
+            (warehouse-in-area? warehouse start-x start-y width height))
+          (all-warehouses)))
+
+;; Aggregate crates across warehouses in a specific area
+(defn crates-by-material-in-area [start-x start-y width height]
+  (crates-by-material-warehouses (warehouses-in-area start-x start-y width height)))
+
+;; Aggregate crates across warehouses in a specific area with resource names
+(defn crates-by-material-in-area-named [start-x start-y width height]
+  (crates-by-material-warehouses-named (warehouses-in-area start-x start-y width height)))
+
 (comment
   ;; Example usage:
   (def warehouse (first (all-warehouses)))
   
-  ;; Get crates for a specific resource
+  ;; Get crates for a specific resource in one warehouse
   (crates-for-resource warehouse (RESOURCES/WOOD))
   (crates-for-resource warehouse (RESOURCES/STONE))
   
-  ;; Get crates for all materials (as resource objects)
+  ;; Get crates for all materials in one warehouse (as resource objects)
   (crates-by-material warehouse)
   
-  ;; Get crates for all materials (with resource names as keys)
+  ;; Get crates for all materials in one warehouse (with resource names as keys)
   (crates-by-material-named warehouse)
   
-  ;; Filter to only show materials with crates > 0
+  ;; Filter to only show materials with crates > 0 in one warehouse
   (->> (crates-by-material-named warehouse)
+       (filter (fn [[_name count]] (> count 0)))
+       (into {}))
+  
+  ;; Aggregate crates across a set of warehouses
+  (def warehouses (take 3 (all-warehouses)))
+  (crates-by-material-warehouses warehouses)
+  (crates-by-material-warehouses-named warehouses)
+  
+  ;; Aggregate crates across ALL warehouses
+  (crates-by-material-all-warehouses)
+  (crates-by-material-all-warehouses-named)
+  
+  ;; Filter to only show materials with crates > 0 across all warehouses
+  (->> (crates-by-material-all-warehouses-named)
+       (filter (fn [[_name count]] (> count 0)))
+       (into {}))
+  
+  ;; Get warehouse position
+  (warehouse-position warehouse)
+  
+  ;; Find warehouses in a specific area (e.g., 200x200 to 300x300)
+  (warehouses-in-area 200 200 100 100)
+  
+  ;; Aggregate crates across warehouses in a specific area
+  (crates-by-material-in-area 200 200 100 100)
+  (crates-by-material-in-area-named 200 200 100 100)
+  
+  ;; Filter to only show materials with crates > 0 in area
+  (->> (crates-by-material-in-area-named 200 200 100 100)
        (filter (fn [[_name count]] (> count 0)))
        (into {}))
   
