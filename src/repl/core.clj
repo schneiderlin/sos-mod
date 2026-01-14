@@ -1,6 +1,6 @@
 (ns repl.core
   (:require
-   [repl.tutorial1 :refer [get-building-material move-camera-to]]
+   [repl.tutorial1 :refer [get-building-material move-camera-to move-camera-to-tile]]
    [repl.utils :refer [get-field-value update-once]])
   (:import
    [game GAME]
@@ -295,11 +295,7 @@
 (def home-constructor (.constructor home))
 
 ;; 创建工地
-(comment
-  ;; 测试一下 instance script 里面的 consumer
-  (InstanceScript/addConsumer "test" (fn [ds] (println "test" ds)))
-  (InstanceScript/removeConsumer "test")
-
+(comment 
   (update-once (fn [ds] (println "test" ds)))
 
   ;; 获取Field对象 
@@ -355,10 +351,11 @@
   (defn build-wall [_ds]
     (let [tx 110
           ty 110]
+      (println "build-wall" tx ty)
       (UtilWallPlacability/wallBuild tx ty (get-building-material "WOOD"))))
 
   (update-once build-wall)
-  (move-camera-to 110 110)
+  (move-camera-to-tile 110 110)
 
   (defn build-door [_ds]
     (let [tx 110
