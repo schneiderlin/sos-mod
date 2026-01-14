@@ -4,8 +4,7 @@
    [repl.utils :as utils])
   (:import 
    [init.resources RESOURCES]
-   [settlement.main SETT]
-   [settlement.room.infra.stockpile StockpileInstance]))
+   [settlement.main SETT]))
 
 
 
@@ -78,7 +77,76 @@
 
   (def minables (array-list->vec (.all (RESOURCES/minables))))
   (->> minables
-       (map minable-info))
+       (map minable-info)) 
+  :rcf)
+
+;; Get the stockpile tally system
+(defn get-stockpile-tally []
+  (let [rooms (SETT/ROOMS)
+        stockpile (.-STOCKPILE rooms)]
+    (.tally stockpile)))
+
+(comment
+  (get-stockpile-tally)
+  :rcf)
+
+;; Get crates for a specific resource in a warehouse
+(defn crates-for-resource [warehouse resource]
+  (let [tally (get-stockpile-tally)
+        crates (.crates tally)]
+    (.get crates resource warehouse)))
+
+(comment
+  (crates-for-resource warehouse (RESOURCES/WOOD))
+  :rcf)
+
+;; Get all resources
+(defn all-resources []
+  (array-list->vec (RESOURCES/ALL)))
+
+;; Get crates for each material in a warehouse
+;; Returns a map of resource -> crate count
+(defn crates-by-material [warehouse]
+  (let [tally (get-stockpile-tally)
+        crates (.crates tally)
+        resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [resource (.get crates resource warehouse)]))
+          resources)))
+
+(comment
+  (crates-by-material warehouse)
+  :rcf)
+
+;; Get crates by material with resource names (more readable)
+(defn crates-by-material-named [warehouse]
+  (let [tally (get-stockpile-tally)
+        crates (.crates tally)
+        resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [(.toString (.name resource)) (.get crates resource warehouse)]))
+          resources)))
+
+(comment
+  ;; Example usage:
+  (def warehouse (first (all-warehouses)))
+  
+  ;; Get crates for a specific resource
+  (crates-for-resource warehouse (RESOURCES/WOOD))
+  (crates-for-resource warehouse (RESOURCES/STONE))
+  
+  ;; Get crates for all materials (as resource objects)
+  (crates-by-material warehouse)
+  
+  ;; Get crates for all materials (with resource names as keys)
+  (crates-by-material-named warehouse)
+  
+  ;; Filter to only show materials with crates > 0
+  (->> (crates-by-material-named warehouse)
+       (filter (fn [[_name count]] (> count 0)))
+       (into {}))
   
   :rcf)
 
