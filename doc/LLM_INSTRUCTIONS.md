@@ -8,8 +8,10 @@ This is a modding project for **Songs of Syx** game. The goal is to programmatic
 
 1. **`src/repl/tutorial1.clj`** - Main working code with camera control and building creation functions
 2. **`doc/src-code/camera_and_building.md`** - Complete documentation of what we've learned
-3. **`src/repl/core.clj`** - Reference implementation and examples
-4. **`src/repl/utils.clj`** - Utility functions (update-once, reflection helpers)
+3. **`doc/src-code/animals_and_hunting.md`** - Documentation for finding and hunting wild animals
+4. **`src/repl/core.clj`** - Reference implementation and examples
+5. **`src/repl/utils.clj`** - Utility functions (update-once, reflection helpers)
+6. **`src/game/animal.clj`** - Animal finding and hunting functions
 
 ## Project Structure
 
@@ -40,6 +42,14 @@ sos-mod/
 - ✅ Create warehouses/stockpiles programmatically
 - ✅ Understanding of ConstructionInit (needs TBuilding, not Structure)
 
+### Animal Finding and Hunting
+- ✅ Find all animals in settlement (wild and domesticated)
+- ✅ Filter wild animals (non-domesticated)
+- ✅ Get animal information (species, position, hunting status)
+- ✅ Mark animals for hunting programmatically
+- ✅ Hunt animals in specific areas
+- ✅ Find nearest animals to a location
+
 ### Key Learnings
 - `ConstructionInit` requires `TBuilding`, not `Structure`
 - Convert using: `BUILDINGS.get(Structure)` where `BUILDINGS = SETT.TERRAIN().BUILDINGS`
@@ -52,6 +62,9 @@ sos-mod/
 - `sos-src/settlement/room/main/construction/ConstructionInit.java` - Building construction
 - `sos-src/settlement/tilemap/terrain/TBuilding.java` - Building materials
 - `sos-src/init/structure/Structure.java` - Structure definitions
+- `sos-src/settlement/entity/animal/Animal.java` - Animal entity class
+- `sos-src/settlement/entity/animal/Animals.java` - Animal management system
+- `sos-src/settlement/job/JobClears.java` - Hunting job implementation
 
 ## Common Patterns
 
@@ -60,6 +73,8 @@ sos-mod/
 (VIEW/s)                    ; Settlement view
 (SETT/ROOMS)                ; All room types
 (SETT/TERRAIN)              ; Terrain/BUILDINGS
+(SETT/ANIMALS)              ; Animal management system
+(SETT/ENTITIES)             ; All entities (including animals)
 (STRUCTURES/all)            ; All structures
 (RESOURCES/WOOD)            ; Resource types
 ```
@@ -79,14 +94,17 @@ sos-mod/
 3. **Resource management** - Check warehouse contents, manage resources
 4. **Game state queries** - Population, happiness, tech research
 5. **Automation** - Create automated gameplay scripts
+6. **Advanced hunting** - Automated hunting patrols, hunting efficiency analysis
 
 ## When Starting a New Task
 
 1. Read `src/repl/tutorial1.clj` to understand current capabilities
 2. Read `doc/src-code/camera_and_building.md` for detailed explanations
-3. Check `src/repl/core.clj` for reference examples
-4. Search `sos-src/` for relevant Java classes
-5. Test in REPL using `(require 'repl.tutorial1)` and call functions
+3. Read `doc/src-code/animals_and_hunting.md` for animal and hunting functionality
+4. Check `src/repl/core.clj` for reference examples
+5. Check `src/game/animal.clj` for animal-related functions
+6. Search `sos-src/` for relevant Java classes
+7. Test in REPL using `(require 'repl.tutorial1)` and `(require 'game.animal)` and call functions
 
 ## Important Notes
 
