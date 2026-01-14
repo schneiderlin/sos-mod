@@ -335,13 +335,55 @@
   (update-once (fn [ds] (println "test" ds)))
   :rcf)
 
+(defn- boxed-to-primitive-type
+  "Convert a boxed type to its primitive equivalent if it exists."
+  [clazz]
+  (cond
+    (= (.getName clazz) "java.lang.Byte") Byte/TYPE
+    (= (.getName clazz) "java.lang.Short") Short/TYPE
+    (= (.getName clazz) "java.lang.Integer") Integer/TYPE
+    (= (.getName clazz) "java.lang.Long") Long/TYPE
+    (= (.getName clazz) "java.lang.Float") Float/TYPE
+    (= (.getName clazz) "java.lang.Double") Double/TYPE
+    (= (.getName clazz) "java.lang.Boolean") Boolean/TYPE
+    (= (.getName clazz) "java.lang.Character") Character/TYPE
+    :else clazz))
+
+(defn- get-param-types
+  "Get parameter types from arguments, handling primitives correctly."
+  [args]
+  (if (empty? args)
+    (into-array Class [])
+    (into-array Class (map (fn [arg]
+                             (if (nil? arg)
+                               Object
+                               (boxed-to-primitive-type (.getClass arg))))
+                           args))))
+
 (defn invoke-method
-  "Invoke a method on an instance using reflection, bypassing access restrictions."
+  "Invoke a method on an instance using reflection, bypassing access restrictions.
+   Works with both public and package-private methods.
+   Handles primitive types correctly (int, long, etc.).
+   
+   Args:
+     instance - The object instance
+     method-name - Name of the method (string)
+     args - Method arguments
+   
+   Example:
+     (invoke-method warehouse \"allocateCrate\" resource 5)"
   [instance method-name & args]
   (let [class (.getClass instance)
-        param-types (if (empty? args)
-                      (into-array Class [])
-                      (into-array Class (map #(.getClass %) args)))
-        method (.getMethod class method-name param-types)
+        param-types (get-param-types args)
+        ;; Try public method first, then fall back to declared method (for package-private)
+        method (try
+                 (.getMethod class method-name param-types)
+                 (catch NoSuchMethodException _
+                   (try
+                     (.getDeclaredMethod class method-name param-types)
+                     (catch NoSuchMethodException e
+                       (throw (Exception. (str "Method not found: " method-name 
+                                               " with parameter types: " 
+                                               (vec param-types)) e))))))
         _ (.setAccessible method true)]
     (.invoke method instance (into-array Object args))))

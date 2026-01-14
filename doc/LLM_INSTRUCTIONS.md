@@ -9,9 +9,11 @@ This is a modding project for **Songs of Syx** game. The goal is to programmatic
 1. **`src/repl/tutorial1.clj`** - Main working code with camera control and building creation functions
 2. **`doc/src-code/camera_and_building.md`** - Complete documentation of what we've learned
 3. **`doc/src-code/animals_and_hunting.md`** - Documentation for finding and hunting wild animals
-4. **`src/repl/core.clj`** - Reference implementation and examples
-5. **`src/repl/utils.clj`** - Utility functions (update-once, reflection helpers)
-6. **`src/game/animal.clj`** - Animal finding and hunting functions
+4. **`doc/src-code/warehouses_and_storage.md`** - Documentation for warehouse and storage management
+5. **`src/repl/core.clj`** - Reference implementation and examples
+6. **`src/repl/utils.clj`** - Utility functions (update-once, reflection helpers)
+7. **`src/game/animal.clj`** - Animal finding and hunting functions
+8. **`src/game/warehouse.clj`** - Warehouse and storage management functions
 
 ## Project Structure
 
@@ -24,9 +26,13 @@ sos-mod/
 │   │   ├── core.clj     # Reference examples
 │   │   └── utils.clj    # Utilities
 │   └── game/            # Game interaction code
+│       ├── animal.clj   # Animal finding and hunting
+│       └── warehouse.clj # Warehouse management
 └── doc/
     └── src-code/        # Documentation
-        └── camera_and_building.md
+        ├── camera_and_building.md
+        ├── animals_and_hunting.md
+        └── warehouses_and_storage.md
 ```
 
 ## What's Been Accomplished
@@ -53,6 +59,15 @@ sos-mod/
 - ✅ Mark animals for hunting programmatically
 - ✅ Hunt animals in specific areas
 - ✅ Find nearest animals to a location
+
+### Warehouse and Storage Management
+- ✅ Get all warehouses and warehouse information
+- ✅ Query crate allocations for resources
+- ✅ Aggregate crate counts across multiple warehouses
+- ✅ Find warehouses in specific areas
+- ✅ Set material types for crates (allocate crates to resources)
+- ✅ Get and set special per-crate limits
+- ✅ Understand the stockpile tally system
 
 ### Key Learnings
 - `ConstructionInit` requires `TBuilding`, not `Structure`
@@ -127,10 +142,12 @@ sos-mod/
 1. Read `src/repl/tutorial1.clj` to understand current capabilities
 2. Read `doc/src-code/camera_and_building.md` for detailed explanations
 3. Read `doc/src-code/animals_and_hunting.md` for animal and hunting functionality
-4. Check `src/repl/core.clj` for reference examples
-5. Check `src/game/animal.clj` for animal-related functions
-6. Search `sos-src/` for relevant Java classes
-7. Test in REPL using `(require 'repl.tutorial1)` and `(require 'game.animal)` and call functions
+4. Read `doc/src-code/warehouses_and_storage.md` for warehouse management
+5. Check `src/repl/core.clj` for reference examples
+6. Check `src/game/animal.clj` for animal-related functions
+7. Check `src/game/warehouse.clj` for warehouse-related functions
+8. Search `sos-src/` for relevant Java classes
+9. Test in REPL using `(require 'repl.tutorial1)`, `(require 'game.animal)`, and `(require 'game.warehouse)` and call functions
 
 ## Important Notes
 

@@ -239,7 +239,12 @@
 (defn allocate-crates-to-resource-once [warehouse resource amount]
   (utils/update-once
    (fn [_ds]
-     (utils/invoke-method warehouse "allocateCrate" resource amount))))
+     (utils/invoke-method warehouse "allocateCrate" resource (int amount)))))
+
+(comment
+  (allocate-crates-to-resource-once warehouse2 (RESOURCES/WOOD) 2)
+  (get-crates-allocated-to-resource warehouse2 (RESOURCES/WOOD))
+  :rcf)
 
 ;; Set the special amount limit for a resource (if set)
 ;; amount: 0 = allow all (use default crate size), 1-100 = restrict to that amount per crate
@@ -293,12 +298,12 @@
 (defn set-warehouse-single-material-once [warehouse resource]
   (utils/update-once
    (fn [_ds]
-     (let [total-crates (utils/invoke-method warehouse "totalCrates")
+     (let [total-crates (int (utils/invoke-method warehouse "totalCrates"))
            all-res (all-resources)]
        ;; Remove allocations from all other resources
        (doseq [r all-res]
          (when (not= r resource)
-           (utils/invoke-method warehouse "allocateCrate" r 0)))
+           (utils/invoke-method warehouse "allocateCrate" r (int 0))))
        ;; Allocate all crates to the specified resource
        (utils/invoke-method warehouse "allocateCrate" resource total-crates)))))
 
@@ -308,15 +313,15 @@
 (defn set-warehouse-materials-once [warehouse resources]
   (utils/update-once
    (fn [_ds]
-     (let [total-crates (utils/invoke-method warehouse "totalCrates")
+     (let [total-crates (int (utils/invoke-method warehouse "totalCrates"))
            all-res (all-resources)
            allowed-set (set resources)
            crates-per-resource (when (seq resources)
-                                 (quot total-crates (count resources)))]
+                                 (int (quot total-crates (count resources))))]
        ;; Remove allocations from resources not in allowed set
        (doseq [r all-res]
          (when (not (contains? allowed-set r))
-           (utils/invoke-method warehouse "allocateCrate" r 0)))
+           (utils/invoke-method warehouse "allocateCrate" r (int 0))))
        ;; Allocate crates to allowed resources
        (when crates-per-resource
          (doseq [r resources]
@@ -328,7 +333,7 @@
    (fn [_ds]
      (let [resources (all-resources)]
        (doseq [r resources]
-         (utils/invoke-method warehouse "allocateCrate" r 0))))))
+         (utils/invoke-method warehouse "allocateCrate" r (int 0)))))))
 
 (comment
   ;; Example usage:
