@@ -10,10 +10,12 @@ This is a modding project for **Songs of Syx** game. The goal is to programmatic
 2. **`doc/src-code/camera_and_building.md`** - Complete documentation of what we've learned
 3. **`doc/src-code/animals_and_hunting.md`** - Documentation for finding and hunting wild animals
 4. **`doc/src-code/warehouses_and_storage.md`** - Documentation for warehouse and storage management
-5. **`src/repl/core.clj`** - Reference implementation and examples
-6. **`src/repl/utils.clj`** - Utility functions (update-once, reflection helpers)
-7. **`src/game/animal.clj`** - Animal finding and hunting functions
-8. **`src/game/warehouse.clj`** - Warehouse and storage management functions
+5. **`doc/src-code/furnace_and_refiner.md`** - Documentation for building furnaces (smelters) and other refiner rooms
+6. **`src/repl/core.clj`** - Reference implementation and examples
+7. **`src/repl/utils.clj`** - Utility functions (update-once, reflection helpers)
+8. **`src/game/animal.clj`** - Animal finding and hunting functions
+9. **`src/game/warehouse.clj`** - Warehouse and storage management functions
+10. **`src/game/refiner.clj`** - Furnace and refiner room creation functions
 
 ## Project Structure
 
@@ -27,12 +29,14 @@ sos-mod/
 │   │   └── utils.clj    # Utilities
 │   └── game/            # Game interaction code
 │       ├── animal.clj   # Animal finding and hunting
-│       └── warehouse.clj # Warehouse management
+│       ├── warehouse.clj # Warehouse management
+│       └── refiner.clj  # Furnace and refiner room creation
 └── doc/
     └── src-code/        # Documentation
         ├── camera_and_building.md
         ├── animals_and_hunting.md
-        └── warehouses_and_storage.md
+        ├── warehouses_and_storage.md
+        └── furnace_and_refiner.md
 ```
 
 ## What's Been Accomplished
@@ -69,6 +73,13 @@ sos-mod/
 - ✅ Get and set special per-crate limits
 - ✅ Understand the stockpile tally system
 
+### Furnace and Refiner Room Creation
+- ✅ Find refiner room types (SMELTER, BAKERY, BREWERY, COALER, WEAVER)
+- ✅ Create smelters (furnaces) programmatically
+- ✅ Create any refiner type programmatically
+- ✅ Get refiner information and furniture details
+- ✅ Understand refiner room requirements (indoor, minimum size)
+
 ### Key Learnings
 - `ConstructionInit` requires `TBuilding`, not `Structure`
 - Convert using: `BUILDINGS.get(Structure)` where `BUILDINGS = SETT.TERRAIN().BUILDINGS`
@@ -90,6 +101,8 @@ sos-mod/
 - `sos-src/settlement/job/JobClears.java` - Hunting job implementation
 - `sos-src/settlement/room/main/placement/UtilWallPlacability.java` - Wall and door placement utilities
 - `sos-src/settlement/room/main/placement/RoomPlacer.java` - Room placement management
+- `sos-src/settlement/room/industry/refiner/ROOM_REFINER.java` - Refiner room blueprint (furnaces, smelters)
+- `sos-src/settlement/room/industry/refiner/Constructor.java` - Refiner constructor
 
 ## Common Patterns
 
@@ -127,6 +140,21 @@ sos-mod/
 (find-door-position center-x center-y width height occupied-tiles :preferred-side :top)
 ```
 
+### Furnace/Smelter Creation Pattern
+```clojure
+;; Create a smelter (furnace) at specified location
+(create-smelter-once center-x center-y width height 
+                     :material-name "WOOD" 
+                     :upgrade 0)
+
+;; Create any refiner type (SMELTER, BAKERY, BREWERY, COALER, WEAVER)
+(create-refiner-once "SMELTER" center-x center-y width height)
+
+;; List all available refiner types
+(all-refiner-types)
+(all-refiner-info)
+```
+
 ## Next Steps / Potential Tasks
 
 1. **Extend building creation** - Support more room types (homes, workshops, etc.) with furniture and wall placement
@@ -143,11 +171,13 @@ sos-mod/
 2. Read `doc/src-code/camera_and_building.md` for detailed explanations
 3. Read `doc/src-code/animals_and_hunting.md` for animal and hunting functionality
 4. Read `doc/src-code/warehouses_and_storage.md` for warehouse management
-5. Check `src/repl/core.clj` for reference examples
-6. Check `src/game/animal.clj` for animal-related functions
-7. Check `src/game/warehouse.clj` for warehouse-related functions
-8. Search `sos-src/` for relevant Java classes
-9. Test in REPL using `(require 'repl.tutorial1)`, `(require 'game.animal)`, and `(require 'game.warehouse)` and call functions
+5. Read `doc/src-code/furnace_and_refiner.md` for furnace and refiner room creation
+6. Check `src/repl/core.clj` for reference examples
+7. Check `src/game/animal.clj` for animal-related functions
+8. Check `src/game/warehouse.clj` for warehouse-related functions
+9. Check `src/game/refiner.clj` for refiner-related functions
+10. Search `sos-src/` for relevant Java classes
+11. Test in REPL using `(require 'repl.tutorial1)`, `(require 'game.animal)`, `(require 'game.warehouse)`, and `(require 'game.refiner)` and call functions
 
 ## Important Notes
 

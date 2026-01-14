@@ -1,15 +1,14 @@
 (ns repl.tutorial1
   (:require
-   [repl.utils :as utils])
+   [repl.utils :as utils]
+   [game.common :refer [get-building-material]])
   (:import
    [game GAME]
    [view.main VIEW]
    [settlement.main SETT]
    [settlement.room.main.construction ConstructionInit]
    [settlement.room.main.placement UtilWallPlacability]
-   [settlement.room.main.throne THRONE]
-   [init.structure STRUCTURES]
-   [init.resources RESOURCES]))
+   [settlement.room.main.throne THRONE]))
 
 ;; Get the game window for camera control
 (defn get-game-window []
@@ -119,25 +118,9 @@
   (get-stockpile-constructor)
   :rcf)
 
-;; Get building materials (e.g., wood, stone)
-;; Returns the TBuilding for the material (ConstructionInit needs TBuilding, not Structure)
-;; material-name should be a resource name like "WOOD", "STONE", etc.
-;; This finds the structure by matching the resource type, then converts to TBuilding
-(defn get-building-material [material-name]
-  (let [material-upper (.toUpperCase material-name)
-        resource (case material-upper
-                   "WOOD" (RESOURCES/WOOD)
-                   "STONE" (RESOURCES/STONE)
-                   (throw (Exception. (str "Unknown material: " material-name ". Supported: WOOD, STONE"))))
-        all-structures (STRUCTURES/all)
-        structure (first (filter #(= resource (.-resource %)) all-structures))]
-    (if structure
-      ;; Convert Structure to TBuilding using BUILDINGS.get(Structure)
-      (let [buildings (.-BUILDINGS (SETT/TERRAIN))]
-        (.get buildings structure))
-      (throw (Exception. (str "Could not find structure for material: " material-name))))))
-
 (comment
+  ;; Building material functions are now in game.common
+  (require '[game.common :refer [get-building-material]])
   (get-building-material "WOOD")
   (get-building-material "STONE")
   :rcf)

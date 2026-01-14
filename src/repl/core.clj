@@ -1,7 +1,8 @@
 (ns repl.core
   (:require
-   [repl.tutorial1 :refer [get-building-material move-camera-to move-camera-to-tile]]
-   [repl.utils :refer [get-field-value update-once]])
+   [repl.tutorial1 :refer [move-camera-to move-camera-to-tile]]
+   [repl.utils :refer [get-field-value update-once]]
+   [game.common :refer [get-building-material]])
   (:import
    [game GAME]
    [view.main VIEW]
