@@ -100,6 +100,32 @@
            (when (nil? (.isPlacable stone-placer tx ty nil nil))
              (.place stone-placer tx ty nil nil))))))))
 
+;; Forage wild crops (采集野生作物) at a specific tile
+;; tx, ty: tile coordinates
+(defn forage-crop-once [tx ty]
+  (utils/update-once
+   (fn [_ds]
+     (let [jobs (get-clearing-jobs)
+           food-job (.food jobs)
+           placer (.placer food-job)]
+       (.place placer tx ty nil nil)))))
+
+;; Forage wild crops in an area
+;; start-x, start-y: top-left corner
+;; width, height: dimensions
+(defn forage-crop-area-once [start-x start-y width height]
+  (utils/update-once
+   (fn [_ds]
+     (let [jobs (get-clearing-jobs)
+           food-job (.food jobs)
+           placer (.placer food-job)]
+       (doseq [y (range height)
+               x (range width)]
+         (let [tx (+ start-x x)
+               ty (+ start-y y)]
+           (when (nil? (.isPlacable placer tx ty nil nil))
+             (.place placer tx ty nil nil))))))))
+
 (comment
   ;; Example usage:
   ;; Clear wood at a single tile
@@ -119,5 +145,11 @@
   
   ;; Clear both in a 10x10 area
   (clear-wood-and-stone-area-once 100 100 10 10)
+  
+  ;; Forage wild crops at a single tile
+  (forage-crop-once 230 608)
+  
+  ;; Forage wild crops in an area
+  (forage-crop-area-once 230 608 10 10)
   :rcf)
 

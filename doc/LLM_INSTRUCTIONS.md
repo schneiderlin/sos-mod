@@ -18,9 +18,11 @@ sos-mod/
 │   │   └── utils.clj    # Utilities (update-once, reflection helpers)
 │   └── game/            # Game interaction code (organized by feature)
 │       ├── animal.clj   # Animal finding and hunting
+│       ├── harvest.clj  # Resource harvesting (wood, stone, wild crops)
 │       ├── warehouse.clj # Warehouse management
 │       ├── refiner.clj  # Smelter and refiner room creation
 │       ├── hearth.clj   # Hearth (火炉) creation
+│       ├── well.clj     # Well (水井) creation
 │       └── common.clj   # Shared utilities (get-building-material, etc.)
 └── doc/
     └── src-code/        # Feature documentation (read as needed)
@@ -38,7 +40,7 @@ sos-mod/
 - **Key**: `VIEW/s().getWindow()` for camera access
 
 ### Building Creation
-- **Code**: `src/game/warehouse.clj`, `src/game/hearth.clj`, `src/game/refiner.clj`
+- **Code**: `src/game/warehouse.clj`, `src/game/hearth.clj`, `src/game/well.clj`, `src/game/refiner.clj`
 - **Docs**: `doc/src-code/camera_and_building.md`, `doc/src-code/furnace_and_refiner.md`
 - **Key**: `ConstructionInit` requires `TBuilding` (use `game.common/get-building-material`)
 - **Pattern**: Always use `utils/update-once` for construction
@@ -48,15 +50,32 @@ sos-mod/
 - **Docs**: `doc/src-code/animals_and_hunting.md`
 - **Key**: `SETT/ANIMALS` for animal management, `SETT/ENTITIES` for entity access
 
+### Wild Crop Harvesting (采集野生作物)
+- **Code**: `src/game/harvest.clj`
+- **Key**: 
+  - `SETT/JOBS().clearss().food` for forage job (采集野生作物)
+  - `TGrowable` terrain tiles contain wild crops
+  - `SETT.WEATHER().growthRipe.cropsAreRipe()` to check if crops are ready
+  - Wild crops re-grow each year automatically
+  - Use `update-once` when marking tiles for foraging
+
 ### Warehouse and Storage Management
 - **Code**: `src/game/warehouse.clj`
 - **Docs**: `doc/src-code/warehouses_and_storage.md`
 - **Key**: Stockpile system, crate allocation, resource management
 
-### Hearth and Refiner Rooms
-- **Code**: `src/game/hearth.clj`, `src/game/refiner.clj`
+### Hearth and Well Rooms (Health Services)
+- **Code**: `src/game/hearth.clj`, `src/game/well.clj`
 - **Docs**: `doc/src-code/furnace_and_refiner.md`
-- **Key**: Hearth (火炉) vs Smelter (冶金厂) distinction, furniture placement
+- **Key**: 
+  - **Hearth (火炉)**: Health service room, supports multiple sizes (5x3, 7x7, etc.), can use WOOD or STONE
+  - **Well (水井)**: Health service room, **fixed at 3x3**, **must use STONE material only**
+  - Both require furniture placement before `createClean()`
+
+### Refiner Rooms
+- **Code**: `src/game/refiner.clj`
+- **Docs**: `doc/src-code/furnace_and_refiner.md`
+- **Key**: Smelter (冶金厂) and other refiner types, must be indoors
 
 ## Common Utilities
 
@@ -94,4 +113,12 @@ sos-mod/
 - Always test in REPL connected to running game
 - Use `update-once` for any code that modifies game state
 - Read documentation files for detailed explanations and examples
+
+## Documentation Updates
+
+**DO NOT update documentation files automatically.** Code may contain errors and needs testing first. Only update documentation when the user explicitly requests it (e.g., "update the documentation" or "更新文档"). 
+
+- When creating new code, do not update `doc/LLM_INSTRUCTIONS.md` or other documentation files
+- Wait for user confirmation that code works before updating docs
+- If user asks to update documentation, then update relevant files
 

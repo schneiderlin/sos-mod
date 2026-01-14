@@ -1,16 +1,21 @@
-# Building a Hearth (火炉) and Smelter (冶金厂)
+# Building a Hearth (火炉), Well (水井), and Smelter (冶金厂)
 
-This guide explains how to programmatically build a hearth (火炉) and smelter (冶金厂) in Songs of Syx using Clojure code.
+This guide explains how to programmatically build a hearth (火炉), well (水井), and smelter (冶金厂) in Songs of Syx using Clojure code.
 
 ## Overview
 
 **Important Distinction:**
 - **火炉 (Hearth)** - A health service room (`ROOM_HEARTH`) that provides warmth and comfort. Located in the "健康" (Health) category.
+- **水井 (Well)** - A health service room (`ROOM_WELL`) that provides water and hygiene. Located in the "健康" (Health) category. **Fixed at 3x3, must use STONE material.**
 - **冶金厂 (Smelter)** - An industrial refiner room (`ROOM_REFINER_SMELTER`) that processes ore into metal. Located in the "Refiner" category.
 
 ### Hearth (火炉) - Health Service Room
 
-The hearth is a 1x1 tile health service room that provides warmth and comfort to citizens. It's part of the health service system.
+The hearth is a health service room that provides warmth and comfort to citizens. It supports multiple sizes (5x3, 7x7, etc.) and can use different materials (WOOD, STONE). It's part of the health service system.
+
+### Well (水井) - Health Service Room
+
+The well is a health service room that provides water and hygiene to citizens. It's **fixed at 3x3** and **must use STONE material**. It's part of the health service system.
 
 ### Smelter (冶金厂) - Refiner Room
 
@@ -29,6 +34,12 @@ Smelters are refiner rooms that process raw materials (like ore) into refined pr
 - `settlement.room.service.hearth.HearthInstance` - Individual hearth instance
 - `settlement.room.service.hearth.Constructor` - Constructor for hearth placement
 - `settlement.main.SETT.ROOMS().HEARTH` - The hearth room blueprint
+
+### For Well (水井)
+- `settlement.room.service.hygine.well.ROOM_WELL` - Well room blueprint class
+- `settlement.room.service.hygine.well.WellInstance` - Individual well instance
+- `settlement.room.service.hygine.well.Constructor` - Constructor for well placement
+- `settlement.main.SETT.ROOMS().WELLS` - List of well room blueprints (typically one)
 
 ### For Smelter (冶金厂)
 - `settlement.room.industry.refiner.ROOM_REFINER` - Base refiner room blueprint class
@@ -196,6 +207,162 @@ The hearth creation process follows the same pattern as the game menu:
 4. **Create Construction**: Finally, `createClean()` is called to create the construction site with the furniture already in place
 
 This matches the behavior of `PlacerItemSingle.place()` in the game's placement system, ensuring that programmatically created hearths behave identically to menu-created ones.
+
+## Building a Well (水井)
+
+The well is a health service room that provides water and hygiene to citizens. It's accessed via `SETT.ROOMS().WELLS` (a list, typically containing one well type). Unlike hearths, wells are **fixed at 3x3** and **must use STONE material**.
+
+### Important Notes About Wells
+
+- **Fixed Size**: Wells are always 3x3 - you cannot specify different dimensions
+- **Required Material**: Wells must use STONE material (not WOOD or other materials)
+- **Game Bug**: The game's `Constructor.java` defines 3 furniture sizes (3x3, 5x5, 6x6), but wells should only be 3x3. The game appears to have a bug where it allows 5x5 and 6x6 wells, but this is incorrect behavior. Our code enforces 3x3 only.
+- **Health Service Room**: Provides water and hygiene services to citizens
+- **Can be built outdoors**: `mustBeIndoors()` returns `false`
+
+### Creating a Well
+
+```clojure
+(ns game.well
+  (:require 
+   [repl.utils :as utils]
+   [game.common :refer [get-building-material]])
+  (:import 
+   [settlement.main SETT]
+   [settlement.room.main.construction ConstructionInit]))
+
+;; Get the first well room blueprint
+;; WELLS is a LIST<ROOM_WELL>, typically contains one well type
+(defn get-well []
+  (let [rooms (SETT/ROOMS)
+        wells (.-WELLS rooms)]
+    (when (> (.size wells) 0)
+      (.get wells 0))))
+
+;; Create a well at specified location
+;; center-x, center-y: center tile coordinates
+;; material-name: building material name (must be "STONE", default "STONE")
+;; upgrade: upgrade level (default 0)
+;;
+;; NOTE: Well is fixed at 3x3 and must use STONE material.
+;; The game's Constructor.java has a bug where it allows 5x5 and 6x6 wells,
+;; but this is incorrect - wells should only be 3x3. We enforce this restriction.
+(defn create-well [center-x center-y & {:keys [material-name upgrade] 
+                                         :or {material-name "STONE" upgrade 0}}]
+  ;; Validate material - must be STONE
+  (when-not (= (.toUpperCase material-name) "STONE")
+    (throw (Exception. (str "Well must use STONE material, got " material-name))))
+  
+  (let [width 3  ; Fixed size
+        height 3  ; Fixed size
+        rooms (SETT/ROOMS)
+        well-blueprint (get-well)
+        _ (when (nil? well-blueprint)
+            (throw (Exception. "Could not find WELL room. Make sure the game has loaded.")))
+        well-constructor (.constructor well-blueprint)
+        tbuilding (get-building-material material-name)
+        construction-init (ConstructionInit. upgrade well-constructor tbuilding 0 nil)
+        tmp (.tmpArea rooms "well")
+        
+        ;; Get furniture group - always use size 0 (3x3 furniture)
+        furnisher-groups (.pgroups well-constructor)
+        first-group (when (> (.size furnisher-groups) 0)
+                      (.get furnisher-groups 0))
+        furniture-size 0  ; Always 3x3
+        furnisher-item (when first-group
+                         (.item first-group furniture-size 0))  ; rot=0
+        _ (when (nil? furnisher-item)
+            (throw (Exception. "Could not get furniture item for well")))
+        
+        ;; Calculate furniture placement position (center of the area)
+        start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))
+        furniture-x (- center-x (quot (.width furnisher-item) 2))
+        furniture-y (- center-y (quot (.height furnisher-item) 2))]
+    
+    ;; Set the building area (always 3x3)
+    (doseq [y (range height)
+            x (range width)]
+      (.set tmp (+ start-x x) (+ start-y y)))
+    
+    ;; Place furniture BEFORE createClean (this is the key step!)
+    (let [fdata (.fData rooms)
+          room-instance (.room tmp)]
+      (.itemSet fdata furniture-x furniture-y furnisher-item room-instance))
+    
+    ;; Create the construction site
+    (.createClean (.construction rooms) tmp construction-init)
+    
+    ;; Clear temporary area
+    (.clear tmp)
+    
+    {:success true
+     :center-x center-x
+     :center-y center-y
+     :width width
+     :height height
+     :room-type "WELL"
+     :furniture-size furniture-size
+     :furniture-width (.width furnisher-item)
+     :furniture-height (.height furnisher-item)}))
+
+;; Create a well using update-once (ensures it happens in a single frame)
+;; Well is fixed at 3x3 and must use STONE material
+(defn create-well-once [center-x center-y & {:keys [material-name upgrade] 
+                                              :or {material-name "STONE" upgrade 0}}]
+  (utils/update-once 
+   (fn [_ds]
+     (create-well center-x center-y 
+                  :material-name material-name 
+                  :upgrade upgrade))))
+```
+
+**Source References:**
+- `settlement.main.SETT.ROOMS().WELLS` - Line 415 in `ROOMS.java`
+- `settlement.room.service.hygine.well.ROOM_WELL` - Well room class
+- `settlement.room.service.hygine.well.Constructor` - Constructor (defines 3 furniture sizes but only 3x3 should be used)
+- `settlement.room.service.hygine.well.WellInstance` - Individual well instance
+
+**Important Notes:**
+- **Fixed Size**: Wells are always 3x3 - no width/height parameters needed
+- **Required Material**: Must use STONE material (enforced by validation)
+- **Furniture Placement**: Like hearths, wells require furniture to be placed **before** calling `createClean()`
+- **Game Bug**: The game's constructor allows 5x5 and 6x6 wells, but this is a bug. Our code enforces 3x3 only.
+- **Health Service Room**: Provides water and hygiene services
+- **Can be built outdoors**: `mustBeIndoors()` returns `false`
+
+### Example Usage
+
+```clojure
+;; Create a well at center (277, 433) using stone (required)
+;; Well is fixed at 3x3 and must use STONE material
+(create-well-once 277 433)
+
+;; Create a well with explicit stone material (redundant but allowed)
+(create-well-once 281 433 :material-name "STONE")
+
+;; Get well info
+(let [well (get-well)
+      info (.-info well)
+      constructor (.constructor well)
+      pgroups (.pgroups constructor)]
+  {:name (.toString (.-name info))
+   :desc (.toString (.desc info))
+   :key (.key well)
+   :uses-area (.usesArea constructor)
+   :must-be-indoors (.mustBeIndoors constructor)
+   :num-furniture-groups (.size pgroups)})
+```
+
+### How It Works
+
+The well creation process is simpler than hearths because wells are fixed size:
+
+1. **Validate Material**: Ensure STONE material is used (required)
+2. **Set Building Area**: The `TmpArea` is set to 3x3 (fixed size)
+3. **Select Furniture**: Always use size 0 (3x3 furniture item)
+4. **Place Furniture**: **Before** creating the construction site, the furniture is placed using `fData.itemSet()`
+5. **Create Construction**: Finally, `createClean()` is called to create the construction site
 
 ## Building a Smelter (冶金厂)
 
