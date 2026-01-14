@@ -186,24 +186,74 @@
             room-instance (.room tmp)]
         
         (when furnisher-item
-          ;; Place furniture items in a pattern across the warehouse
-          ;; Furniture items are typically 2x1, so we place them every 2 tiles horizontally
-          (doseq [y (range start-y (+ start-y height))
-                  x (range start-x (+ start-x width) 2)]  ; Step by 2 for 2x1 items
-            (let [item-width (.width furnisher-item)
-                  item-height (.height furnisher-item)
-                  ;; Check if item fits in the remaining space
-                  fits-width (<= (+ x item-width) (+ start-x width))
-                  fits-height (<= (+ y item-height) (+ start-y height))]
-              (when (and fits-width fits-height)
-                ;; Check if placement is valid (not already occupied)
-                (try
-                  (let [existing-item (.get (.item fdata) x y)]
-                    (when (nil? existing-item)
-                      (.itemSet fdata x y furnisher-item room-instance)))
-                  (catch Exception _e
-                    ;; Skip if placement fails
-                    nil))))))))
+          ;; Use a smarter placement pattern that ensures paths remain accessible
+          ;; Place items in a grid pattern with spacing, leaving clear paths between rows/columns
+          (let [item-width (.width furnisher-item)
+                item-height (.height furnisher-item)
+                ;; Calculate spacing: leave at least 1 tile gap between items for paths
+                ;; This ensures crates don't block each other and paths remain accessible
+                spacing-x (max 2 (+ item-width 1))  ; At least 1 tile gap after item
+                spacing-y (max 2 (+ item-height 1)) ; At least 1 tile gap after item
+                placed-items (atom #{})]  ; Track placed items to avoid overlaps
+            
+            ;; Place items in a grid pattern with spacing
+            (doseq [y (range start-y (+ start-y height) spacing-y)
+                    x (range start-x (+ start-x width) spacing-x)]
+              (let [end-x (+ x item-width)
+                    end-y (+ y item-height)
+                    ;; Check if item fits within bounds
+                    fits-width (<= end-x (+ start-x width))
+                    fits-height (<= end-y (+ start-y height))
+                    ;; Check if this position would overlap with already placed items
+                    overlaps? (some (fn [[px py]]
+                                      (let [p-end-x (+ px item-width)
+                                            p-end-y (+ py item-height)]
+                                        ;; Check if rectangles overlap
+                                        (and (< x p-end-x) (< px end-x)
+                                             (< y p-end-y) (< py end-y))))
+                                    @placed-items)]
+                
+                (when (and fits-width fits-height (not overlaps?))
+                  ;; Check if all tiles for this item are available
+                  (let [all-tiles-available (every? (fn [ty]
+                                                      (every? (fn [tx]
+                                                                (let [existing-item (.get (.item fdata) tx ty)
+                                                                      existing-tile (.get (.tile fdata) tx ty)]
+                                                                  (and (nil? existing-item) (nil? existing-tile))))
+                                                              (range x end-x)))
+                                                    (range y end-y))]
+                    (when all-tiles-available
+                      ;; Check if item has at least one accessible side (not blocked on all 4 sides)
+                      ;; This ensures the item is reachable
+                      (let [has-access (or
+                                        ;; Check if there's a free tile to the north
+                                        (some (fn [tx] (and (>= (- y 1) start-y)
+                                                           (nil? (.get (.item fdata) tx (- y 1)))
+                                                           (nil? (.get (.tile fdata) tx (- y 1)))))
+                                              (range x end-x))
+                                        ;; Check if there's a free tile to the south
+                                        (some (fn [tx] (and (< end-y (+ start-y height))
+                                                           (nil? (.get (.item fdata) tx end-y))
+                                                           (nil? (.get (.tile fdata) tx end-y))))
+                                              (range x end-x))
+                                        ;; Check if there's a free tile to the west
+                                        (some (fn [ty] (and (>= (- x 1) start-x)
+                                                           (nil? (.get (.item fdata) (- x 1) ty))
+                                                           (nil? (.get (.tile fdata) (- x 1) ty))))
+                                              (range y end-y))
+                                        ;; Check if there's a free tile to the east
+                                        (some (fn [ty] (and (< end-x (+ start-x width))
+                                                           (nil? (.get (.item fdata) end-x ty))
+                                                           (nil? (.get (.tile fdata) end-x ty))))
+                                              (range y end-y)))]
+                        (when has-access
+                          ;; Place the item
+                          (try
+                            (.itemSet fdata x y furnisher-item room-instance)
+                            (swap! placed-items conj [x y])
+                            (catch Exception _e
+                              ;; Skip if placement fails
+                              nil)))))))))))))
     
     ;; Create the construction site
     (.createClean (.construction rooms) tmp construction-init)
@@ -231,7 +281,7 @@
 (comment
   ;; Warehouse creation with furniture
   ;; Create a 5x5 warehouse at tile (261, 400) using wood (with furniture)
-  (create-warehouse-once 261 430 5 5)
+  (create-warehouse-once 251 430 5 5)
   
   ;; Create warehouse without furniture (furniture will be auto-placed by game)
   (create-warehouse-once 280 400 5 5 :place-furniture false)
