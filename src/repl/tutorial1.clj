@@ -5,6 +5,7 @@
    [view.main VIEW]
    [settlement.main SETT]
    [settlement.room.main.construction ConstructionInit]
+   [settlement.room.main.throne THRONE]
    [init.structure STRUCTURES]
    [init.resources RESOURCES]))
 
@@ -190,7 +191,12 @@
 (comment
   ;; Warehouse creation
   ;; Create a 5x5 warehouse at tile (100, 100) using wood
-  (create-warehouse-once 100 100 5 5)
+  (THRONE/coo)
+  
+  ;; 换了一个存档, utils 里面的是不是要重置?
+  (utils/update-once (fn [_ds] (println "test" _ds)))
+  
+  (create-warehouse-once 261 400 5 5)
   ;; move camera to the warehouse
   (move-camera-to-tile 100 100)
   
@@ -200,4 +206,18 @@
   ;; Create a larger warehouse (7x7) at tile (130, 130)
   (create-warehouse-once 130 130 7 7)
   
+  :rcf)
+
+;; Move camera to the throne position
+;; Gets the throne's coordinate (in tiles) and moves the camera to center on it
+(defn move-to-throne []
+  (let [throne-coo (THRONE/coo)
+        window (get-game-window)
+        tile-x (.x throne-coo)
+        tile-y (.y throne-coo)]
+    (.centerAtTile window tile-x tile-y)))
+
+(comment
+  ;; Move camera to throne
+  (move-to-throne)
   :rcf)

@@ -19,9 +19,7 @@
   
   (array-list-resize->vec warehouses)
   
-  (def warehouse (first warehouses))
-
-  
+  (def warehouse (first warehouses)) 
   :rcf)
 
 (defn warehouse-info [warehouse]

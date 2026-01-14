@@ -198,13 +198,26 @@
         (println "  Try using InstanceScript directly if the mod is loaded.")
         (reset! standalone-script-registered true)))))
 
+(defn reset-standalone-updater
+  "Reset the standalone updater registration state.
+   This is useful when you know a new game has been loaded and want to force re-registration.
+   
+   After calling this, the next call to add-standalone-updater or add-updater will re-register."
+  []
+  (reset! standalone-script-registered false)
+  (reset! standalone-script-instance nil)
+  (println "Standalone updater registration state reset. Will re-register on next updater add."))
+
 (comment
   (register-standalone-script)
+  (reset-standalone-updater)
   :rcf)
 
 (defn add-standalone-updater
   "Add an updater function that will be called every game update cycle.
    Works even if the mod is not loaded by hooking directly into ScriptEngine.
+   
+   Note: If you load a new game, call (reset-standalone-updater) first to clear stale state.
    
    Args:
      key - Unique identifier for this updater
@@ -247,6 +260,9 @@
 
 (defn add-updater
   "Add an updater function. Tries InstanceScript first if available, falls back to standalone.
+   
+   Automatically handles game reloads by checking if InstanceScript or standalone script
+   is still registered and re-registering if needed.
    
    Args:
      key - Unique identifier
@@ -314,6 +330,10 @@
                     ;; Always remove the consumer, even if f throws an exception
                     (remove-updater consumer-id))))]
     (add-updater consumer-id new-f)))
+
+(comment
+  (update-once (fn [ds] (println "test" ds)))
+  :rcf)
 
 (defn invoke-method
   "Invoke a method on an instance using reflection, bypassing access restrictions."
