@@ -41,6 +41,10 @@ sos-mod/
 - ✅ Get building materials (Structure → TBuilding conversion)
 - ✅ Create warehouses/stockpiles programmatically
 - ✅ Understanding of ConstructionInit (needs TBuilding, not Structure)
+- ✅ Warehouse construction with automatic furniture placement
+- ✅ Automatic wall placement around warehouses
+- ✅ Automatic door placement (adjacent to free inner tiles)
+- ✅ Pure functions for calculating furniture positions, occupied tiles, edge tiles, and door positions
 
 ### Animal Finding and Hunting
 - ✅ Find all animals in settlement (wild and domesticated)
@@ -55,6 +59,10 @@ sos-mod/
 - Convert using: `BUILDINGS.get(Structure)` where `BUILDINGS = SETT.TERRAIN().BUILDINGS`
 - Always use `update-once` for construction to ensure single-frame execution
 - Camera uses `GameWindow` class accessed via `VIEW/s().getWindow()`
+- Warehouse furniture placement: Use `calculate-furniture-positions` to plan placement, then `calculate-occupied-tiles` to check conflicts
+- Wall placement: Use `UtilWallPlacability/wallBuild` and `UtilWallPlacability/openingBuild` for doors
+- Door placement: Must be adjacent to a free inner tile (not blocked by furniture)
+- Pure functions: Extract calculation logic into pure functions for easier testing in REPL
 
 ## Important Source Code References
 
@@ -65,6 +73,8 @@ sos-mod/
 - `sos-src/settlement/entity/animal/Animal.java` - Animal entity class
 - `sos-src/settlement/entity/animal/Animals.java` - Animal management system
 - `sos-src/settlement/job/JobClears.java` - Hunting job implementation
+- `sos-src/settlement/room/main/placement/UtilWallPlacability.java` - Wall and door placement utilities
+- `sos-src/settlement/room/main/placement/RoomPlacer.java` - Room placement management
 
 ## Common Patterns
 
@@ -87,14 +97,30 @@ sos-mod/
    ))
 ```
 
+### Warehouse Creation Pattern
+```clojure
+;; Create a warehouse with automatic furniture and wall placement
+(create-warehouse-once center-x center-y width height 
+                       :material-name "WOOD" 
+                       :upgrade 0
+                       :place-furniture true)
+
+;; Pure functions for testing in REPL:
+(calculate-furniture-positions center-x center-y width height item-width item-height)
+(calculate-occupied-tiles furniture-positions item-width item-height)
+(find-edge-tiles start-x start-y width height)
+(find-door-position center-x center-y width height occupied-tiles :preferred-side :top)
+```
+
 ## Next Steps / Potential Tasks
 
-1. **Extend building creation** - Support more room types (homes, workshops, etc.)
+1. **Extend building creation** - Support more room types (homes, workshops, etc.) with furniture and wall placement
 2. **Entity interaction** - Control NPCs, get entity information
 3. **Resource management** - Check warehouse contents, manage resources
 4. **Game state queries** - Population, happiness, tech research
 5. **Automation** - Create automated gameplay scripts
 6. **Advanced hunting** - Automated hunting patrols, hunting efficiency analysis
+7. **Room layout optimization** - Improve furniture placement algorithms for better pathfinding
 
 ## When Starting a New Task
 
