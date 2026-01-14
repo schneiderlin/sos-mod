@@ -200,25 +200,13 @@
     ;; Default to top
     [(+ start-x (quot width 2)) start-y]))
 
-(comment
-  (calculate-door-position 261 430 5 5 :side :top)
-  :rcf)
-
-;; Find the edge tile closest to a door position
-;; Returns the [x y] coordinate of the door tile, or nil if not found
-;; Pure function - no side effects
-(defn find-door-tile [edge-tiles door-x door-y]
-  (let [is-door-location? (fn [[x y]]
-                            (and (= y door-y) 
-                                 (>= x (- door-x 1)) 
-                                 (<= x (+ door-x 1))))]
-    (first (filter is-door-location? edge-tiles))))
-
-;; Calculate furniture placement positions
-;; Returns a list of [x y] positions where furniture can be placed
-;; Pure function - no side effects
-(defn calculate-furniture-positions [start-x start-y width height item-width item-height]
-  (let [spacing-x (max 2 (+ item-width 1))
+(defn calculate-furniture-positions 
+  "注意这个返回的 count 是家具的个数，不是 tile 的个数. 需要通过 calculate-occupied-tiles 来计算 occupied 的 tile 个数."
+  [center-x center-y width height item-width item-height]
+  (let [start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))
+        ;; Spacing: leave at least 1 tile gap between items for paths
+        spacing-x (max 2 (+ item-width 1))
         spacing-y (max 2 (+ item-height 1))
         positions (atom [])]
     (doseq [y (range start-y (+ start-y height) spacing-y)
@@ -232,52 +220,111 @@
     @positions))
 
 (comment
+  (calculate-furniture-positions 261 430 5 5 2 1)
+  :rcf)
+
+(defn calculate-occupied-tiles [furniture-positions item-width item-height]
+  (let [occupied (atom #{})]
+    (doseq [[x y] furniture-positions]
+      (doseq [ty (range y (+ y item-height))
+              tx (range x (+ x item-width))]
+        (swap! occupied conj [tx ty])))
+    @occupied))
+
+(comment
+  (let [furniture-positions (calculate-furniture-positions 261 430 5 5 2 1)]
+    (calculate-occupied-tiles furniture-positions 2 1))
+  :rcf)
+
+(defn find-door-position [center-x center-y
+                          width height
+                          occupied-tiles &
+                          {:keys [preferred-side]
+                           :or {preferred-side :top}}]
+  (let [start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))
+        occupied-set (set occupied-tiles)
+        edge-tiles (find-edge-tiles start-x start-y width height)
+        ;; Check if an inner tile is free (not occupied)
+        inner-tile-free? (fn [x y]
+                           (and (>= x start-x) (< x (+ start-x width))
+                                (>= y start-y) (< y (+ start-y height))
+                                (not (contains? occupied-set [x y]))))
+        ;; Check if an edge tile is adjacent to at least one free inner tile
+        has-free-adjacent? (fn [[edge-x edge-y]]
+                             ;; Check all 4 orthogonal directions from edge tile
+                             (some (fn [[dx dy]]
+                                     (inner-tile-free? (+ edge-x dx) (+ edge-y dy)))
+                                   [[0 1]   ; N (if edge is north, inner is south)
+                                    [0 -1]  ; S (if edge is south, inner is north)
+                                    [1 0]   ; E (if edge is east, inner is west)
+                                    [-1 0]])) ; W (if edge is west, inner is east)
+        ;; Filter edge tiles to only those with free adjacent inner tiles
+        valid-edge-tiles (filter has-free-adjacent? edge-tiles)
+        ;; Sort by preference: prefer tiles on the preferred side, then by distance from center
+        preferred-door-pos (calculate-door-position start-x start-y width height :side preferred-side)
+        [pref-x pref-y] preferred-door-pos
+        ;; Sort valid tiles: first by side preference, then by distance from preferred position
+        sorted-tiles (sort-by (fn [[x y]]
+                                (let [on-preferred-side? (case preferred-side
+                                                           :top (= y (- start-y 1))
+                                                           :bottom (= y (+ start-y height))
+                                                           :left (= x (- start-x 1))
+                                                           :right (= x (+ start-x width))
+                                                           false)
+                                      distance (Math/sqrt (+ (Math/pow (- x pref-x) 2)
+                                                             (Math/pow (- y pref-y) 2)))]
+                                  ;; Prefer tiles on preferred side, then by distance
+                                  (if on-preferred-side? 0 (+ 1000 distance))))
+                              valid-edge-tiles)]
+    (first sorted-tiles)))
+
+(comment
   ;; Test pure functions in REPL
   
-  ;; Example: 5x5 warehouse at center (100, 100)
-;;   (let [center-x 100
-;;         center-y 100
-;;         width 5
-;;         height 5
-;;         start-x (- center-x (quot width 2))  ; 98
-;;         start-y (- center-y (quot height 2))] ; 98
+  ;; Example: 5x5 warehouse at center (261, 430)
+  (let [center-x 261
+        center-y 430
+        width 5
+        height 5
+        item-width 2
+        item-height 1]
     
-;;     ;; Find all edge tiles
-;;     (find-edge-tiles start-x start-y width height)
-;;     ;; => [[97 97] [98 97] [99 97] [100 97] [101 97] [102 97] ...]
+    ;; 1. Calculate furniture positions
+    #_(calculate-furniture-positions center-x center-y width height item-width item-height)
+    ;; => [[260 430] [262 430] [260 432] [262 432]]
     
-;;     ;; Calculate door position (default: top center)
-;;     (calculate-door-position start-x start-y width height)
-;;     ;; => [100 98]  (top center)
+    ;; 2. Calculate occupied tiles
+    #_(let [furniture-positions (calculate-furniture-positions center-x center-y width height item-width item-height)]
+      (calculate-occupied-tiles furniture-positions item-width item-height))
+    ;; => #{[259 428]
+;;   [263 430]
+;;   [262 428]
+;;   [263 428]
+;;   [259 430]
+;;   [259 432]
+;;   [260 432]
+;;   [263 432]
+;;   [262 432]
+;;   [262 430]
+;;   [260 428]
+;;   [260 430]}
     
-;;     ;; Calculate door position on different sides
-;;     (calculate-door-position start-x start-y width height :side :bottom)
-;;     ;; => [100 102]  (bottom center)
-;;     (calculate-door-position start-x start-y width height :side :left)
-;;     ;; => [98 100]  (left center)
-;;     (calculate-door-position start-x start-y width height :side :right)
-;;     ;; => [102 100]  (right center)
+    ;; 3. Find door position (adjacent to free inner tile)
+    (let [furniture-positions (calculate-furniture-positions center-x center-y width height item-width item-height)
+          occupied-tiles (calculate-occupied-tiles furniture-positions item-width item-height)]
+      (find-door-position center-x center-y width height occupied-tiles :preferred-side :top))
+    ;; => [263 429] or another valid edge tile adjacent to a free inner tile
     
-;;     ;; Find door tile from edge tiles
-;;     (let [edge-tiles (find-edge-tiles start-x start-y width height)
-;;           [door-x door-y] (calculate-door-position start-x start-y width height)]
-;;       (find-door-tile edge-tiles door-x door-y))
-;;     ;; => [100 97]  (the edge tile at door position)
-    
-;;     ;; Calculate furniture positions (for 2x1 crate)
-;;     (calculate-furniture-positions start-x start-y width height 2 1)
-;;     ;; => [[98 98] [100 98] [98 100] [100 100]]
-    
-;;     ;; Visualize edge tiles and door
-;;     (let [edge-tiles (find-edge-tiles start-x start-y width height)
-;;           [door-x door-y] (calculate-door-position start-x start-y width height)
-;;           door-tile (find-door-tile edge-tiles door-x door-y)]
-;;       {:edge-tiles edge-tiles
-;;        :door-position [door-x door-y]
-;;        :door-tile door-tile
-;;        :edge-count (count edge-tiles)})
-    ;; => {:edge-tiles [[97 97] ...], :door-position [100 98], :door-tile [100 97], :edge-count 20}
-  
+    ;; 4. Visualize the complete plan
+    #_(let [furniture-positions (calculate-furniture-positions center-x center-y width height item-width item-height)
+          occupied-tiles (calculate-occupied-tiles furniture-positions item-width item-height)
+          door-tile (find-door-position center-x center-y width height occupied-tiles :preferred-side :top)]
+      {:furniture-positions furniture-positions
+       :occupied-count (count occupied-tiles)
+       :door-tile door-tile})
+    ;; => {:furniture-positions [[260 430] ...], :occupied-count 8, :door-tile [263 429]}
+  ) 
   :rcf)
 
 
@@ -314,111 +361,58 @@
             x (range width)]
       (.set tmp (+ start-x x) (+ start-y y)))
     
-    ;; Place furniture (crates) - MUST be done before createClean
-    (when place-furniture
-      (let [fdata (.fData rooms)
-            ;; Get furniture items from the constructor's placement groups
-            furnisher-groups (.pgroups stockpile-constructor)
-            ;; Get the first placement group (usually contains crate items)
-            first-group (when (> (.size furnisher-groups) 0)
-                          (.get furnisher-groups 0))
-            ;; Get the first furniture item from the group (usually a 2x1 crate)
-            furnisher-item (when first-group
-                             (try
-                               (.item first-group 0 0)
-                               (catch Exception _e nil)))
-            room-instance (.room tmp)]
+    ;; Get furniture item once
+    (let [furnisher-groups (.pgroups stockpile-constructor)
+          first-group (when (> (.size furnisher-groups) 0)
+                        (.get furnisher-groups 0))
+          furnisher-item (when first-group
+                           (try
+                             (.item first-group 0 0)
+                             (catch Exception _e nil)))
+          
+          ;; Calculate furniture and door positions using pure functions
+          furniture-positions (when (and place-furniture furnisher-item)
+                                (calculate-furniture-positions center-x center-y width height 
+                                                             (.width furnisher-item) 
+                                                             (.height furnisher-item)))
+          occupied-tiles (when furniture-positions
+                           (calculate-occupied-tiles furniture-positions 
+                                                    (.width furnisher-item) 
+                                                    (.height furnisher-item)))
+          door-tile (find-door-position center-x center-y width height 
+                                        (or occupied-tiles #{}) 
+                                        :preferred-side :top)]
+      
+      ;; Place furniture (crates) - MUST be done before createClean
+      (when (and place-furniture furniture-positions furnisher-item)
+        (let [fdata (.fData rooms)
+              room-instance (.room tmp)]
+          ;; Place each furniture item at the calculated positions
+          (doseq [[x y] furniture-positions]
+            (try
+              (.itemSet fdata x y furnisher-item room-instance)
+              (catch Exception _e
+                ;; Skip if placement fails
+                nil)))))
+      
+      ;; Build walls around the warehouse with a door
+      (let [edge-tiles (find-edge-tiles start-x start-y width height)
+            is-door-location? (fn [[x y]]
+                               (and door-tile
+                                    (= x (first door-tile))
+                                    (= y (second door-tile))))]
         
-        (when furnisher-item
-          ;; Use a smarter placement pattern that ensures paths remain accessible
-          ;; Place items in a grid pattern with spacing, leaving clear paths between rows/columns
-          (let [item-width (.width furnisher-item)
-                item-height (.height furnisher-item)
-                ;; Calculate spacing: leave at least 1 tile gap between items for paths
-                ;; This ensures crates don't block each other and paths remain accessible
-                spacing-x (max 2 (+ item-width 1))  ; At least 1 tile gap after item
-                spacing-y (max 2 (+ item-height 1)) ; At least 1 tile gap after item
-                placed-items (atom #{})]  ; Track placed items to avoid overlaps
-            
-            ;; Place items in a grid pattern with spacing
-            (doseq [y (range start-y (+ start-y height) spacing-y)
-                    x (range start-x (+ start-x width) spacing-x)]
-              (let [end-x (+ x item-width)
-                    end-y (+ y item-height)
-                    ;; Check if item fits within bounds
-                    fits-width (<= end-x (+ start-x width))
-                    fits-height (<= end-y (+ start-y height))
-                    ;; Check if this position would overlap with already placed items
-                    overlaps? (some (fn [[px py]]
-                                      (let [p-end-x (+ px item-width)
-                                            p-end-y (+ py item-height)]
-                                        ;; Check if rectangles overlap
-                                        (and (< x p-end-x) (< px end-x)
-                                             (< y p-end-y) (< py end-y))))
-                                    @placed-items)]
-                
-                (when (and fits-width fits-height (not overlaps?))
-                  ;; Check if all tiles for this item are available
-                  (let [all-tiles-available (every? (fn [ty]
-                                                      (every? (fn [tx]
-                                                                (let [existing-item (.get (.item fdata) tx ty)
-                                                                      existing-tile (.get (.tile fdata) tx ty)]
-                                                                  (and (nil? existing-item) (nil? existing-tile))))
-                                                              (range x end-x)))
-                                                    (range y end-y))]
-                    (when all-tiles-available
-                      ;; Check if item has at least one accessible side (not blocked on all 4 sides)
-                      ;; This ensures the item is reachable
-                      (let [has-access (or
-                                        ;; Check if there's a free tile to the north
-                                        (some (fn [tx] (and (>= (- y 1) start-y)
-                                                           (nil? (.get (.item fdata) tx (- y 1)))
-                                                           (nil? (.get (.tile fdata) tx (- y 1)))))
-                                              (range x end-x))
-                                        ;; Check if there's a free tile to the south
-                                        (some (fn [tx] (and (< end-y (+ start-y height))
-                                                           (nil? (.get (.item fdata) tx end-y))
-                                                           (nil? (.get (.tile fdata) tx end-y))))
-                                              (range x end-x))
-                                        ;; Check if there's a free tile to the west
-                                        (some (fn [ty] (and (>= (- x 1) start-x)
-                                                           (nil? (.get (.item fdata) (- x 1) ty))
-                                                           (nil? (.get (.tile fdata) (- x 1) ty))))
-                                              (range y end-y))
-                                        ;; Check if there's a free tile to the east
-                                        (some (fn [ty] (and (< end-x (+ start-x width))
-                                                           (nil? (.get (.item fdata) end-x ty))
-                                                           (nil? (.get (.tile fdata) end-x ty))))
-                                              (range y end-y)))]
-                        (when has-access
-                          ;; Place the item
-                          (try
-                            (.itemSet fdata x y furnisher-item room-instance)
-                            (swap! placed-items conj [x y])
-                            (catch Exception _e
-                              ;; Skip if placement fails
-                              nil)))))))))))))
-    
-    ;; Build walls around the warehouse with a door
-    (let [edge-tiles (find-edge-tiles start-x start-y width height)
-          [door-x door-y] (calculate-door-position start-x start-y width height :side :top)
-          door-tile (find-door-tile edge-tiles door-x door-y)
-          is-door-location? (fn [[x y]]
-                             (and door-tile
-                                  (= x (first door-tile))
-                                  (= y (second door-tile))))]
-      
-      ;; Place door at the door location (roof only, no wall)
-      (when door-tile
-        (let [[door-tx door-ty] door-tile]
-          (when (UtilWallPlacability/openingCanBe door-tx door-ty)
-            (UtilWallPlacability/openingBuild door-tx door-ty tbuilding))))
-      
-      ;; Build walls on all edge tiles (except door location)
-      (doseq [[x y] edge-tiles]
-        (when (and (UtilWallPlacability/wallCanBe x y)
-                   (not (is-door-location? [x y])))
-          (UtilWallPlacability/wallBuild x y tbuilding))))
+        ;; Place door at the door location (roof only, no wall)
+        (when door-tile
+          (let [[door-tx door-ty] door-tile]
+            (when (UtilWallPlacability/openingCanBe door-tx door-ty)
+              (UtilWallPlacability/openingBuild door-tx door-ty tbuilding))))
+        
+        ;; Build walls on all edge tiles (except door location)
+        (doseq [[x y] edge-tiles]
+          (when (and (UtilWallPlacability/wallCanBe x y)
+                     (not (is-door-location? [x y])))
+            (UtilWallPlacability/wallBuild x y tbuilding)))))
     
     ;; Create the construction site
     (.createClean (.construction rooms) tmp construction-init)
