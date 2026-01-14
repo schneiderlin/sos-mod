@@ -1,5 +1,6 @@
 (ns repl.core
   (:require
+   [repl.tutorial1 :refer [get-building-material move-camera-to]]
    [repl.utils :refer [get-field-value update-once]])
   (:import
    [game GAME]
@@ -10,6 +11,8 @@
    [settlement.room.main.construction ConstructionInit]
    [settlement.room.main.placement UtilWallPlacability]
    [settlement.room.main.placement PLACEMENT]
+   [init.structure STRUCTURES]
+   [init.resources RESOURCES]
    [your.mod InstanceScript]))
 
 (def world (GAME/world))
@@ -291,10 +294,6 @@
 (def home (.-HOME rooms))
 (def home-constructor (.constructor home))
 
-;; 建筑材料
-(def woods (.get (.-BUILDINGS (SETT/TERRAIN)) "WOOD"))
-(.get woods 0)
-
 ;; 创建工地
 (comment
   ;; 测试一下 instance script 里面的 consumer
@@ -303,8 +302,6 @@
 
   (update-once (fn [ds] (println "test" ds)))
 
-
-
   ;; 获取Field对象 
   (def tmp-area (get-field-value rooms "tmpArea"))
   (get-field-value tmp-area "lastUser")
@@ -312,7 +309,7 @@
   ;; 创建个 ConstructionInit 来测试一下
   (def construction-init (let [upgrade 0 ;; 无升级 
                                furnisher home-constructor ;; 住宅构造器
-                               structure (.get woods 0) ;; 木制建筑
+                               structure (get-building-material "WOOD") ;; 木制建筑
                                degrade 0 ;; 无退化
                                state nil ;; 无状态
                                ]
@@ -325,7 +322,7 @@
           center-y 120
           construction-init (let [upgrade 0 ;; 无升级 
                                   furnisher home-constructor ;; 住宅构造器
-                                  structure (.get woods 0) ;; 木制建筑
+                                  structure (get-building-material "WOOD") ;; 木制建筑
                                   degrade 0 ;; 无退化
                                   state nil ;; 无状态
                                   ]
@@ -349,7 +346,7 @@
       (.createClean (.construction rooms) tmp construction-init)
 
       ;; 少了 placer place 的步骤, 所以完成建造的时候获取不到相关信息
-
+      
       ;; 清除临时区域
       (.clear tmp)))
 
@@ -358,14 +355,15 @@
   (defn build-wall [_ds]
     (let [tx 110
           ty 110]
-      (UtilWallPlacability/wallBuild tx ty (.get woods 0))))
+      (UtilWallPlacability/wallBuild tx ty (get-building-material "WOOD"))))
 
   (update-once build-wall)
+  (move-camera-to 110 110)
 
   (defn build-door [_ds]
     (let [tx 110
           ty 111]
-      (UtilWallPlacability/openingBuild tx ty (.get woods 0))))
+      (UtilWallPlacability/openingBuild tx ty (get-building-material "WOOD"))))
   (update-once build-door)
 
 
