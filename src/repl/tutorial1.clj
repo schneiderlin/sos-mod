@@ -221,6 +221,123 @@
   :rcf)
 
 ;; ============================================================================
+;; Furniture Inspection Functions
+;; ============================================================================
+
+;; Get FurnisherData instance
+(defn get-furniture-data []
+  (let [rooms (SETT/ROOMS)]
+    (.fData rooms)))
+
+;; Get furniture item at a specific tile
+(defn get-furniture-item [tx ty]
+  (let [fdata (get-furniture-data)]
+    (.get (.item fdata) tx ty)))
+
+;; Get furniture tile at a specific tile
+(defn get-furniture-tile [tx ty]
+  (let [fdata (get-furniture-data)]
+    (.get (.tile fdata) tx ty)))
+
+;; Check if a tile has furniture
+(defn has-furniture? [tx ty]
+  (let [item (get-furniture-item tx ty)]
+    (some? item)))
+
+;; Check if a tile has a crate (for stockpiles)
+(defn has-crate? [tx ty]
+  (let [stockpile-constructor (get-stockpile-constructor)]
+    (try
+      ;; Try direct method call if available
+      (.isCrate stockpile-constructor tx ty)
+      (catch Exception _e
+        ;; Fallback: check if tile is a crate tile
+        (let [fdata (get-furniture-data)
+              tile (.get (.tile fdata) tx ty)]
+          (some? tile))))))
+
+;; Get furniture info at a tile
+(defn furniture-info [tx ty]
+  (let [fdata (get-furniture-data)
+        item (.get (.item fdata) tx ty)
+        tile (.get (.tile fdata) tx ty)]
+    {:has-item (some? item)
+     :has-tile (some? tile)
+     :item item
+     :tile tile
+     :item-width (when item (.width item))
+     :item-height (when item (.height item))
+     :item-area (when item (.-area item))
+     :item-rotation (when item (.-rotation item))}))
+
+;; Scan an area for furniture
+(defn scan-furniture-area [start-x start-y width height]
+  (let [results (atom [])]
+    (doseq [y (range height)
+            x (range width)]
+      (let [tx (+ start-x x)
+            ty (+ start-y y)
+            info (furniture-info tx ty)]
+        (when (or (:has-item info) (:has-tile info))
+          (swap! results conj {:x tx :y ty :info info}))))
+    @results))
+
+;; Get furniture info for warehouse at center (261, 400) with 5x5 size
+(defn warehouse-furniture-info [center-x center-y width height]
+  (let [start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))
+        furniture-map (atom {})]
+    (doseq [y (range height)
+            x (range width)]
+      (let [tx (+ start-x x)
+            ty (+ start-y y)
+            info (furniture-info tx ty)
+            crate? (has-crate? tx ty)]
+        (when (or (:has-item info) (:has-tile info) crate?)
+          (swap! furniture-map assoc [tx ty]
+                 (assoc info :has-crate crate?)))))
+    {:center-x center-x
+     :center-y center-y
+     :width width
+     :height height
+     :start-x start-x
+     :start-y start-y
+     :furniture @furniture-map
+     :total-tiles-with-furniture (count @furniture-map)}))
+
+(comment
+  ;; Furniture inspection examples for warehouse at (261, 400)
+  
+  ;; Get furniture data instance
+  (get-furniture-data)
+  
+  ;; Check a specific tile
+  (furniture-info 259 398)  ; Top-left area of warehouse
+  (furniture-info 261 400)  ; Center of warehouse
+  (furniture-info 263 402)  ; Bottom-right area of warehouse
+  
+  ;; Check if tile has crate
+  (has-crate? 259 398)
+  (has-crate? 261 400)
+  
+  ;; Check if tile has any furniture
+  (has-furniture? 259 398)
+  
+  ;; Get furniture item/tile directly
+  (get-furniture-item 259 398)
+  (get-furniture-tile 259 398)
+  (get-furniture-item 261 400)
+  (get-furniture-tile 261 400)
+  
+  ;; Scan the entire warehouse area (5x5, centered at 261, 400)
+  (warehouse-furniture-info 261 400 5 5)
+  
+  ;; Scan a smaller area
+  (scan-furniture-area 259 398 3 3)
+  
+  :rcf)
+
+;; ============================================================================
 ;; Time Flow Control
 ;; ============================================================================
 
