@@ -208,6 +208,128 @@
 (defn crates-by-material-in-area-named [start-x start-y width height]
   (crates-by-material-warehouses-named (warehouses-in-area start-x start-y width height)))
 
+;; ============================================================================
+;; Setting Material Types for Crates
+;; ============================================================================
+
+;; Get the number of crates allocated to a resource in a warehouse
+;; Returns the number of crates allocated to this resource type
+(defn get-crates-allocated-to-resource [warehouse resource]
+  (let [tally (get-stockpile-tally)
+        crates (.crates tally)]
+    (.get crates resource warehouse)))
+
+(comment
+  (get-crates-allocated-to-resource warehouse1 (RESOURCES/WOOD))
+  (get-crates-allocated-to-resource warehouse2 (RESOURCES/WOOD))
+
+  (get-crates-allocated-to-resource warehouse1 (RESOURCES/STONE))
+  (get-crates-allocated-to-resource warehouse2 (RESOURCES/STONE))
+  :rcf)
+
+;; Get the special amount limit for a resource (if set)
+;; Returns the limit (0 = not restricted, >0 = restricted to that amount per crate)
+;; Note: This is different from crate allocation - this sets a per-crate limit
+(defn get-crate-material-limit [warehouse resource]
+  (utils/invoke-method warehouse "getSpecialAmount" resource))
+
+;; Allocate a specific number of crates to a resource type
+;; This is the primary way to set which resources can be stored
+;; amount: number of crates to allocate to this resource (0 = remove allocation)
+(defn allocate-crates-to-resource-once [warehouse resource amount]
+  (utils/update-once
+   (fn [_ds]
+     (utils/invoke-method warehouse "allocateCrate" resource amount))))
+
+;; Set the special amount limit for a resource (if set)
+;; amount: 0 = allow all (use default crate size), 1-100 = restrict to that amount per crate
+;; Note: This is different from allocation - this sets a per-crate limit
+;; Note: This must be called within update-once for side effects
+(defn set-crate-material-limit [warehouse resource amount]
+  (utils/invoke-method warehouse "setSpecialAmount" resource amount))
+
+;; Set material limit for a resource (with update-once wrapper)
+(defn set-crate-material-limit-once [warehouse resource amount]
+  (utils/update-once
+   (fn [_ds]
+     (set-crate-material-limit warehouse resource amount))))
+
+;; Get all crate allocations for a warehouse
+;; Returns a map of resource -> number of crates allocated
+(defn get-crate-allocations [warehouse]
+  (let [resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [resource (get-crates-allocated-to-resource warehouse resource)]))
+          resources)))
+
+;; Get all crate allocations for a warehouse with resource names
+(defn get-crate-allocations-named [warehouse]
+  (let [resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [(.toString (.name resource)) (get-crates-allocated-to-resource warehouse resource)]))
+          resources)))
+
+;; Get all material limits for a warehouse
+;; Returns a map of resource -> limit
+(defn get-crate-material-limits [warehouse]
+  (let [resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [resource (get-crate-material-limit warehouse resource)]))
+          resources)))
+
+;; Get all material limits for a warehouse with resource names
+(defn get-crate-material-limits-named [warehouse]
+  (let [resources (all-resources)]
+    (into {}
+          (map (fn [resource]
+                 [(.toString (.name resource)) (get-crate-material-limit warehouse resource)]))
+          resources)))
+
+;; Set a warehouse to only accept a specific resource
+;; Allocates all available crates to the specified resource
+(defn set-warehouse-single-material-once [warehouse resource]
+  (utils/update-once
+   (fn [_ds]
+     (let [total-crates (utils/invoke-method warehouse "totalCrates")
+           all-res (all-resources)]
+       ;; Remove allocations from all other resources
+       (doseq [r all-res]
+         (when (not= r resource)
+           (utils/invoke-method warehouse "allocateCrate" r 0)))
+       ;; Allocate all crates to the specified resource
+       (utils/invoke-method warehouse "allocateCrate" resource total-crates)))))
+
+;; Set a warehouse to accept multiple resources
+;; resources: a collection of RESOURCE objects
+;; Distributes crates evenly among the specified resources
+(defn set-warehouse-materials-once [warehouse resources]
+  (utils/update-once
+   (fn [_ds]
+     (let [total-crates (utils/invoke-method warehouse "totalCrates")
+           all-res (all-resources)
+           allowed-set (set resources)
+           crates-per-resource (when (seq resources)
+                                 (quot total-crates (count resources)))]
+       ;; Remove allocations from resources not in allowed set
+       (doseq [r all-res]
+         (when (not (contains? allowed-set r))
+           (utils/invoke-method warehouse "allocateCrate" r 0)))
+       ;; Allocate crates to allowed resources
+       (when crates-per-resource
+         (doseq [r resources]
+           (utils/invoke-method warehouse "allocateCrate" r crates-per-resource)))))))
+
+;; Clear all material restrictions (remove all crate allocations)
+(defn clear-warehouse-material-restrictions-once [warehouse]
+  (utils/update-once
+   (fn [_ds]
+     (let [resources (all-resources)]
+       (doseq [r resources]
+         (utils/invoke-method warehouse "allocateCrate" r 0))))))
+
 (comment
   ;; Example usage:
   (def warehouse (first (all-warehouses)))
@@ -255,6 +377,36 @@
   (->> (crates-by-material-in-area-named 200 200 100 100)
        (filter (fn [[_name count]] (> count 0)))
        (into {}))
+  
+  ;; ============================================================================
+  ;; Setting Material Types for Crates
+  ;; ============================================================================
+  
+  (def warehouses (all-warehouses))
+  (def warehouse1 (first warehouses))
+  (def warehouse2 (second warehouses))
+
+  ;; Get current material limit for a resource
+  (get-crate-material-limit warehouse1 (RESOURCES/WOOD))
+  (get-crate-material-limit warehouse2 (RESOURCES/WOOD))
+  
+  ;; Get all material limits
+  (get-crate-material-limits warehouse1)
+  (get-crate-material-limits warehouse2)
+  (get-crate-material-limits-named warehouse1)
+  (get-crate-material-limits-named warehouse2)
+  
+  ;; Set material limit for a resource (0 = allow all, 1-100 = restrict to that amount)
+  (set-crate-material-limit-once warehouse (RESOURCES/WOOD) 50)
+  
+  ;; Set warehouse to only accept one material type
+  (set-warehouse-single-material-once warehouse (RESOURCES/WOOD))
+  
+  ;; Set warehouse to accept multiple materials
+  (set-warehouse-materials-once warehouse [(RESOURCES/WOOD) (RESOURCES/STONE)])
+  
+  ;; Clear all restrictions (allow all materials with default crate size)
+  (clear-warehouse-material-restrictions-once warehouse)
   
   :rcf)
 
