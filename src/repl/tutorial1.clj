@@ -6,6 +6,7 @@
    [view.main VIEW]
    [settlement.main SETT]
    [settlement.room.main.construction ConstructionInit]
+   [settlement.room.main.placement UtilWallPlacability]
    [settlement.room.main.throne THRONE]
    [init.structure STRUCTURES]
    [init.resources RESOURCES]))
@@ -141,6 +142,149 @@
   (get-building-material "STONE")
   :rcf)
 
+;; ============================================================================
+;; Pure functions for warehouse planning (testable in REPL)
+;; ============================================================================
+
+;; Find all edge tiles around a rectangular area
+;; Returns a list of [x y] coordinates for tiles that are:
+;; - Outside the area
+;; - Adjacent to the area (orthogonally)
+;; Pure function - no side effects
+(defn find-edge-tiles [start-x start-y width height]
+  (let [edge-tiles (atom [])]
+    ;; Iterate over a 7x7 grid for a 5x5 area (includes all edge tiles)
+    ;; Range needs to be inclusive of the outer edge
+    ;; For width=5, we need x from start-x-1 to start-x+5 (7 values)
+    (doseq [y (range (- start-y 1) (+ start-y height 1 1))
+            x (range (- start-x 1) (+ start-x width 1 1))]
+      (let [is-inside (and (>= x start-x) (< x (+ start-x width))
+                           (>= y start-y) (< y (+ start-y height)))
+            is-edge (not is-inside)
+            ;; Check if this edge tile is adjacent to the area (orthogonally or diagonally)
+            ;; Check all 8 directions: N, S, E, W, NE, NW, SE, SW
+            adjacent-to-area (some (fn [[dx-offset dy-offset]]
+                                     (let [dx (+ x dx-offset)
+                                           dy (+ y dy-offset)]
+                                       (and (>= dx start-x) (< dx (+ start-x width))
+                                            (>= dy start-y) (< dy (+ start-y height)))))
+                                   ;; All 8 directions: orthogonal + diagonal
+                                   [[0 -1]   ; N
+                                    [0 1]    ; S
+                                    [1 0]    ; E
+                                    [-1 0]   ; W
+                                    [1 -1]   ; NE
+                                    [-1 -1]  ; NW
+                                    [1 1]    ; SE
+                                    [-1 1]])] ; SW
+        
+        (when (and is-edge adjacent-to-area)
+          (swap! edge-tiles conj [x y]))))
+    @edge-tiles))
+
+(comment
+  (-> (find-edge-tiles 261 430 5 5)
+      count)
+  :rcf)
+
+;; Calculate door position for a warehouse
+;; side can be :top, :bottom, :left, :right
+;; Returns [door-x door-y] coordinates
+;; Pure function - no side effects
+(defn calculate-door-position [start-x start-y width height & {:keys [side] :or {side :top}}]
+  (case side
+    :top [(+ start-x (quot width 2)) start-y]
+    :bottom [(+ start-x (quot width 2)) (+ start-y height -1)]
+    :left [start-x (+ start-y (quot height 2))]
+    :right [(+ start-x width -1) (+ start-y (quot height 2))]
+    ;; Default to top
+    [(+ start-x (quot width 2)) start-y]))
+
+(comment
+  (calculate-door-position 261 430 5 5 :side :top)
+  :rcf)
+
+;; Find the edge tile closest to a door position
+;; Returns the [x y] coordinate of the door tile, or nil if not found
+;; Pure function - no side effects
+(defn find-door-tile [edge-tiles door-x door-y]
+  (let [is-door-location? (fn [[x y]]
+                            (and (= y door-y) 
+                                 (>= x (- door-x 1)) 
+                                 (<= x (+ door-x 1))))]
+    (first (filter is-door-location? edge-tiles))))
+
+;; Calculate furniture placement positions
+;; Returns a list of [x y] positions where furniture can be placed
+;; Pure function - no side effects
+(defn calculate-furniture-positions [start-x start-y width height item-width item-height]
+  (let [spacing-x (max 2 (+ item-width 1))
+        spacing-y (max 2 (+ item-height 1))
+        positions (atom [])]
+    (doseq [y (range start-y (+ start-y height) spacing-y)
+            x (range start-x (+ start-x width) spacing-x)]
+      (let [end-x (+ x item-width)
+            end-y (+ y item-height)
+            fits-width (<= end-x (+ start-x width))
+            fits-height (<= end-y (+ start-y height))]
+        (when (and fits-width fits-height)
+          (swap! positions conj [x y]))))
+    @positions))
+
+(comment
+  ;; Test pure functions in REPL
+  
+  ;; Example: 5x5 warehouse at center (100, 100)
+;;   (let [center-x 100
+;;         center-y 100
+;;         width 5
+;;         height 5
+;;         start-x (- center-x (quot width 2))  ; 98
+;;         start-y (- center-y (quot height 2))] ; 98
+    
+;;     ;; Find all edge tiles
+;;     (find-edge-tiles start-x start-y width height)
+;;     ;; => [[97 97] [98 97] [99 97] [100 97] [101 97] [102 97] ...]
+    
+;;     ;; Calculate door position (default: top center)
+;;     (calculate-door-position start-x start-y width height)
+;;     ;; => [100 98]  (top center)
+    
+;;     ;; Calculate door position on different sides
+;;     (calculate-door-position start-x start-y width height :side :bottom)
+;;     ;; => [100 102]  (bottom center)
+;;     (calculate-door-position start-x start-y width height :side :left)
+;;     ;; => [98 100]  (left center)
+;;     (calculate-door-position start-x start-y width height :side :right)
+;;     ;; => [102 100]  (right center)
+    
+;;     ;; Find door tile from edge tiles
+;;     (let [edge-tiles (find-edge-tiles start-x start-y width height)
+;;           [door-x door-y] (calculate-door-position start-x start-y width height)]
+;;       (find-door-tile edge-tiles door-x door-y))
+;;     ;; => [100 97]  (the edge tile at door position)
+    
+;;     ;; Calculate furniture positions (for 2x1 crate)
+;;     (calculate-furniture-positions start-x start-y width height 2 1)
+;;     ;; => [[98 98] [100 98] [98 100] [100 100]]
+    
+;;     ;; Visualize edge tiles and door
+;;     (let [edge-tiles (find-edge-tiles start-x start-y width height)
+;;           [door-x door-y] (calculate-door-position start-x start-y width height)
+;;           door-tile (find-door-tile edge-tiles door-x door-y)]
+;;       {:edge-tiles edge-tiles
+;;        :door-position [door-x door-y]
+;;        :door-tile door-tile
+;;        :edge-count (count edge-tiles)})
+    ;; => {:edge-tiles [[97 97] ...], :door-position [100 98], :door-tile [100 97], :edge-count 20}
+  
+  :rcf)
+
+
+;; ============================================================================
+;; Warehouse creation function
+;; ============================================================================
+
 ;; Create a warehouse/stockpile at the specified location
 ;; center-x, center-y: center tile coordinates
 ;; width, height: dimensions of the warehouse (in tiles)
@@ -254,6 +398,27 @@
                             (catch Exception _e
                               ;; Skip if placement fails
                               nil)))))))))))))
+    
+    ;; Build walls around the warehouse with a door
+    (let [edge-tiles (find-edge-tiles start-x start-y width height)
+          [door-x door-y] (calculate-door-position start-x start-y width height :side :top)
+          door-tile (find-door-tile edge-tiles door-x door-y)
+          is-door-location? (fn [[x y]]
+                             (and door-tile
+                                  (= x (first door-tile))
+                                  (= y (second door-tile))))]
+      
+      ;; Place door at the door location (roof only, no wall)
+      (when door-tile
+        (let [[door-tx door-ty] door-tile]
+          (when (UtilWallPlacability/openingCanBe door-tx door-ty)
+            (UtilWallPlacability/openingBuild door-tx door-ty tbuilding))))
+      
+      ;; Build walls on all edge tiles (except door location)
+      (doseq [[x y] edge-tiles]
+        (when (and (UtilWallPlacability/wallCanBe x y)
+                   (not (is-door-location? [x y])))
+          (UtilWallPlacability/wallBuild x y tbuilding))))
     
     ;; Create the construction site
     (.createClean (.construction rooms) tmp construction-init)
