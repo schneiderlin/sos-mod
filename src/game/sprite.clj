@@ -420,6 +420,14 @@
   :rcf)
 
 ;; Get texture coordinates for a tile
+;; Returns a TextureCoords object, which contains:
+;; - x1, y1, x2, y2: coordinates in the OpenGL texture (0.0-1.0 normalized)
+;; - width, height: pixel dimensions
+;; NOTE: TextureCoords does NOT contain pixel data!
+;; The actual texture data is stored in GPU memory (OpenGL) and cannot be directly accessed.
+;; To extract pixels, you must either:
+;; 1. Read from the source PNG file (use export-sprite-from-png)
+;; 2. Render to a framebuffer and read pixels (complex, requires OpenGL context)
 (defn get-tile-texture [tile-sheet tile-index]
   (try
     (when tile-sheet
@@ -439,9 +447,78 @@
       (catch Exception e
         {:error (.getMessage e)}))))
 
+;; Export sprite from original PNG file
+;; This reads directly from the source PNG file and extracts the sprite region
+(defn export-sprite-from-png
+  [race-key sheet-type tile-index output-path & {:keys [scale] :or {scale 1}}]
+  (try
+    (let [;; Path to the original PNG file
+          base-path "base/data.zip/data/assets/sprite/race"
+          png-file (str base-path "/" race-key ".png")
+          file-obj (File. png-file)]
+      (if (.exists file-obj)
+        (let [source-img (ImageIO/read file-obj)
+              ;; Sprite sheet layout: 448x546 pixels
+              ;; Sheet: 18 rows, each row has 2 sprites (left=body, right=shadow)
+              ;; Each sprite in source is ~224x30 pixels, output is 24x24
+              ;; Lay: 6 sprites from right side, each 32x32
+              [sprite-width sprite-height src-x src-y]
+              (case sheet-type
+                :sheet (let [;; Sheet layout from RaceSheet.java:
+                             ;; - Source: 448x546 pixels
+                             ;; - s.singles.init(0, 0, 1, 1, 2, 18, d.s24)
+                             ;;   = from (0,0), 1x1 tiles, 2 per row, 18 rows, output 24x24
+                             ;; - Code skips shadow (column 1), only uses body (column 0)
+                             ;; - Each row in source: 546/18 ≈ 30.33 pixels high
+                             ;; - Body sprite: left half (0-224px), shadow: right half (224-448px)
+                             row tile-index  ; Tile index = row number (0-17)
+                             sprite-w 224   ; Body sprite width (left half of 448px image)
+                             sprite-h 30    ; Row height (546/18, rounded)
+                             x 0            ; Always from left side (body sprites only)
+                             y (* row sprite-h)]
+                         [24 24 x y])  ; Output size is 24x24
+                :lay (let [;; Lay layout from RaceSheet.java:
+                           ;; - s.singles.init(s.singles.body().x2(), 0, 1, 1, 4, 3, d.s32)
+                           ;;   = from right half (x2()), 1x1 tiles, 4 per row, 3 rows, output 32x32
+                           ;; - Code skips shadow sprites, only uses body
+                           ;; - Each row: 546/3 = 182 pixels high
+                           ;; - Each sprite in row: 224/4 = 56 pixels wide (but we use every other)
+                           row (quot tile-index 2)  ; Which row (0-2), skip shadow sprites
+                           sprite-h 182             ; Row height (546/3)
+                           x 224                    ; Start from right half (x=224)
+                           y (* row sprite-h)]
+                       [32 32 x y])  ; Output size is 32x32
+                [24 24 0 0])
+              scaled-width (* sprite-width scale)
+              scaled-height (* sprite-height scale)
+              output-img (BufferedImage. scaled-width scaled-height BufferedImage/TYPE_INT_ARGB)
+              g (.createGraphics output-img)]
+          ;; Draw the sprite region from source to output
+          (.drawImage g source-img
+                      0 0 scaled-width scaled-height
+                      src-x src-y (+ src-x sprite-width) (+ src-y sprite-height)
+                      nil)
+          (.dispose g)
+          ;; Ensure output directory exists
+          (let [output-file (File. output-path)
+                parent-dir (.getParentFile output-file)]
+            (when (and parent-dir (not (.exists parent-dir)))
+              (.mkdirs parent-dir)))
+          ;; Save the image
+          (ImageIO/write output-img "png" (File. output-path))
+          {:success true
+           :path output-path
+           :size sprite-width
+           :tile-index tile-index
+           :source-region {:x src-x :y src-y :width sprite-width :height sprite-height}})
+        {:success false :error (str "Source PNG file not found: " png-file)}))
+    (catch Exception e
+      {:success false :error (.getMessage e)})))
+
 ;; Export a sprite tile to PNG file
 ;; This is a simplified version - actual implementation may need to use game's rendering system
 ;; Note: Direct texture extraction may not be straightforward due to OpenGL texture management
+;; TextureCoords only contains texture coordinates, not pixel data!
 (defn export-sprite-to-png 
   [tile-sheet tile-index output-path & {:keys [scale] :or {scale 1}}]
   (try
@@ -449,17 +526,18 @@
       (let [size (.size tile-sheet)
             scaled-size (* size scale)
             texture (.getTexture tile-sheet tile-index)
-            _ (def !debug texture)
             img (BufferedImage. scaled-size scaled-size BufferedImage/TYPE_INT_ARGB)
             g (.createGraphics img)]
-        ;; Note: This is a placeholder - actual texture data extraction
-        ;; requires access to OpenGL texture data, which is complex.
-        ;; You may need to use the game's rendering system to render to a framebuffer
-        ;; and then read the pixels.
-        (println "Warning: Direct texture export not fully implemented.")
-        (println "Tile sheet size:" size)
-        (println "Tile index:" tile-index)
-        (println "Texture:" texture)
+        ;; Note: TextureCoords only contains coordinates (x1, y1, x2, y2) in the texture,
+        ;; NOT the actual pixel data. The texture data is in GPU memory (OpenGL),
+        ;; which cannot be directly accessed from Java.
+        (println "Warning: Cannot extract pixels from TextureCoords.")
+        (println "TextureCoords only contains:" 
+                 "x1=" (try (.x1 texture) (catch Exception _ "N/A"))
+                 "y1=" (try (.y1 texture) (catch Exception _ "N/A"))
+                 "x2=" (try (.x2 texture) (catch Exception _ "N/A"))
+                 "y2=" (try (.y2 texture) (catch Exception _ "N/A")))
+        (println "Use export-sprite-from-png instead to read from source PNG file.")
         ;; For now, create a placeholder image
         (.setColor g java.awt.Color/BLACK)
         (.fillRect g 0 0 scaled-size scaled-size)
@@ -472,7 +550,15 @@
       {:success false :error (.getMessage e)})))
 
 ;; Convenience function to get and export a race sprite
+;; This function uses the source PNG file method (recommended)
 (defn export-race-sprite 
+  [sheet-type race-key action direction output-path 
+   & {:keys [adult scale] :or {adult true scale 1}}]
+  (let [tile-index (get-tile-index sheet-type action direction)]
+    (export-sprite-from-png race-key sheet-type tile-index output-path :scale scale)))
+
+;; Alternative: Export using tile-sheet (creates placeholder, doesn't extract actual pixels)
+(defn export-race-sprite-from-sheet
   [sheet-type race-key action direction output-path 
    & {:keys [adult scale] :or {adult true scale 1}}]
   (let [tile-sheet (get-race-sheet sheet-type race-key :adult adult)
@@ -482,7 +568,7 @@
       {:success false :error "Failed to get tile sheet"})))
 
 (comment
-  !debug
+  
 
   (export-race-sprite :sheet "Human" :head 0 "output/head_0.png")
   (export-race-sprite :sheet "Human" :torso-right 3 "output/head_3.png")
