@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Skill(clojure-eval)"
+      "Skill(clojure-eval)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

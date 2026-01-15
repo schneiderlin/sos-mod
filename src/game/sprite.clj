@@ -9,6 +9,8 @@
    [javax.imageio ImageIO]))
 
 "base/data.zip/data/assets/sprite/里面有各种 sprite sheet"
+"最外面一层 gap 的宽度是 6"
+"小图标 18 行 2 列, 24 * 24"
 
 ;; Note: SheetType, GameSheets, and Textures are imported for type hints
 ;; and potential future use. They may be used in function parameters or examples.
@@ -347,49 +349,43 @@
   (get-race-sheet :sheet "Human")
   :rcf)
 
-;; Get tile index for a direction and action
-;; For sheet (standing/walking):
-;;   - action: :head, :torso-still, :torso-right, :torso-left, :torso-carry, :tunic, :feet-none, :feet-right, :feet-left, :shadow
-;;   - direction: 0-7 (8 directions, where 0 is typically right/east)
-;; For lay (lying down):
-;;   - action: ignored (lay sheet only has direction-based sprites), pass nil
-;;   - direction: 0-5 (6 directions for lying sprites)
+;; Action types and their row indices in the PNG
+;; PNG stores ONE sprite per action (the game rotates/mirrors for 8 directions)
+(def action-rows
+  {:feet-none 0
+   :feet-right 1
+   :feet-right2 2
+   :feet-left 3
+   :feet-left2 4
+   :tunic 5
+   :torso-still 6
+   :torso-right 7
+   :torso-right2 8
+   :torso-right3 9
+   :torso-left 10
+   :torso-left2 11
+   :torso-left3 12
+   :torso-carry 13
+   :torso-out 14
+   :torso-out2 15
+   :head 16
+   :shadow 17})
+
+;; Get the PNG row index for an action type (0-17)
+(defn get-action-row [action]
+  (get action-rows action 0))
+
+;; Legacy function for game's internal tile index (action * 8 + direction)
+;; This is used by the game engine, not needed for PNG export
 (defn get-tile-index [sheet-type action direction]
-  (try
-    (let [NR 1  ; Number of directions for sheet
-          ;; Base indices for sheet actions (from HSpriteConst)
-          ;; Base indices from HSpriteConst.java (in order of definition): 
-          base-indices {:feet-none (* 0 NR)      ; 0
-                        :feet-right (* 1 NR)     ; 8
-                        :feet-right2 (* 2 NR)    ; 16
-                        :feet-left (* 3 NR)      ; 24
-                        :feet-left2 (* 4 NR)     ; 32
-                        :tunic (* 5 NR)          ; 40
-                        :torso-still (* 6 NR)     ; 48
-                        :torso-right (* 7 NR)     ; 56
-                        :torso-right2 (* 8 NR)    ; 64
-                        :torso-right3 (* 9 NR)   ; 72
-                        :torso-left (* 10 NR)    ; 80
-                        :torso-left2 (* 11 NR)   ; 88
-                        :torso-left3 (* 12 NR)   ; 96
-                        :torso-carry (* 13 NR)    ; 104
-                        :torso-out (* 14 NR)     ; 112
-                        :torso-out2 (* 15 NR)    ; 120
-                        :head (* 16 NR)          ; 128
-                        :shadow (* 17 NR)}]      ; 136
-      (case sheet-type
-        :sheet (let [base (get base-indices action 0)]
-                 (println "base:" base)
-                 (+ base (mod direction NR)))
-        :lay (mod direction 6)  ; Lay sheet has 6 sprites
-        0))
-    (catch Exception e
-      (println "Error calculating tile index:" (.getMessage e))
-      0)))
+  (case sheet-type
+    :sheet (+ (* (get-action-row action) 8) (mod direction 8))
+    :lay (mod direction 6)
+    0))
 
 (comment 
-  (get-tile-index :sheet :head 0)
-  (get-tile-index :sheet :torso-right 0)
+  (get-action-row :head) ;; => 16
+  (get-action-row :torso-still) ;; => 6
   :rcf)
 
 ;; Get texture coordinates for a tile
@@ -422,82 +418,137 @@
 
 ;; Export sprite from original PNG file
 ;; This reads directly from the source PNG file in data.zip and extracts the sprite region
+;; For :sheet - index is row (0-17, one per action type)
+;; For :lay - index is pose (0-5)
 (defn export-sprite-from-png
-  [race-key sheet-type tile-index output-path & {:keys [scale] :or {scale 1}}]
+  [race-key sheet-type index output-path & {:keys [scale] :or {scale 1}}]
   (try
-    (let [;; Path to the zip file and entry
-          zip-path "base/data.zip"
+    (let [zip-path "base/data.zip"
           zip-entry-path (str "data/assets/sprite/race/" race-key ".png")
           zip-file (File. zip-path)]
       (if (and (.exists zip-file) (.isFile zip-file))
-        (let [;; Open zip file and read the entry
-              zip-file-obj (ZipFile. zip-file)
+        (let [zip-file-obj (ZipFile. zip-file)
               zip-entry (.getEntry zip-file-obj zip-entry-path)]
           (if zip-entry
-            (let [;; Read image from zip entry
-                  entry-stream (.getInputStream zip-file-obj zip-entry)
+            (let [entry-stream (.getInputStream zip-file-obj zip-entry)
                   source-img (ImageIO/read entry-stream)
                   _ (.close entry-stream)
                   _ (.close zip-file-obj)
-                  ;; Sprite sheet layout: 448x546 pixels
-                  ;; Sheet: 18 rows, each row has 2 sprites (left=body, right=shadow)
-                  ;; Each sprite in source is ~224x30 pixels, output is 24x24
-                  ;; Lay: 6 sprites from right side, each 32x32
+                  ;; PNG layout: 448x546 pixels
+                  ;; Left section (sheet): 18 rows x 2 cols (body + shadow), 24x24 each
+                  ;; Right section (lay): 3 rows x 4 cols, 32x32 each, 6 body sprites
                   [sprite-width sprite-height src-x src-y]
                   (case sheet-type
-                    :sheet (let [;; Sheet layout from RaceSheet.java:
-                                 ;; - Source: 448x546 pixels
-                                 ;; - s.singles.init(0, 0, 1, 1, 2, 18, d.s24)
-                                 ;;   = from (0,0), tilesX=2, tilesY=18, output 24x24
-                                 ;; - Code uses setSkip to skip shadow (column 1), only uses body (column 0)
-                                 ;; - Each sprite: 24x24 pixels, with 6px padding (m=6)
-                                 ;; - Position calculation: pixelX = x + tx * (size + m), pixelY = y + ty * (size + m)
-                                 ;; - For body sprites: tx=0 (always), ty = tile-index (0-17)
-                                 ;; - So: x = 0 + 0 * (24 + 6) = 0, y = 0 + ty * (24 + 6) = ty * 30
-                                 ;; - But source image has padding at start: body.getStartX() includes m=6
-                                 ;; - Actually: body.init(x, y, width, height, ...) where x=0, y=0
-                                 ;; - body.getStartX() = x + m = 0 + 6 = 6
-                                 ;; - So actual sprite position: x = 6 + tx * 30, y = 6 + ty * 30
-                                 ;; - For body (tx=0): x = 6, y = 6 + tile-index * 30
-                                 sprite-size 24
-                                 padding 6     ; m = 6 pixels padding between sprites
-                                 tx 0          ; Always column 0 (body, shadow is column 1)
-                                 ty tile-index ; Row number (0-17)
-                                 ;; Body starts at (m, m) = (6, 6) from top-left
-                                 x (+ padding (* tx (+ sprite-size padding)))  ; 6 + 0 * 30 = 6
-                                 y (+ padding (* ty (+ sprite-size padding)))] ; 6 + ty * 30
+                    :sheet (let [sprite-size 24
+                                 padding 6
+                                 row index  ; Direct row index (0-17)
+                                 x (+ padding 0)  ; Column 0 (body), x = 6
+                                 y (+ padding (* row (+ sprite-size padding)))]  ; 6 + row * 30
                              [sprite-size sprite-size x y])
-                    :lay (let [;; Lay layout from RaceSheet.java:
-                               ;; - s.singles.init(s.singles.body().x2(), 0, 1, 1, 4, 3, d.s32)
-                               ;;   = from sheet.body().x2(), tilesX=4, tilesY=3, output 32x32
-                               ;; - Code uses setSkip to skip shadow sprites (every other column)
-                               ;; - Each sprite: 32x32 pixels, with 6px padding (m=6)
-                               ;; - Sheet body width = m + tilesX * (size + m) = 6 + 2 * (24 + 6) = 66
-                               ;; - So sheet.body().x2() = 66 (right edge of sheet body)
-                               ;; - Lay starts at x = 66, with padding, first sprite at x = 66 + 6 = 72
-                               ;; - Since we skip shadows, we use columns 0 and 2 (tx=0 or 2)
-                               ;; - For tile-index: 0->row0 col0, 1->row0 col2, 2->row1 col0, 3->row1 col2, 4->row2 col0, 5->row2 col2
-                               sprite-size 32
+                    :lay (let [sprite-size 32
                                padding 6
-                               sheet-body-width (+ padding (* 2 (+ 24 padding)))  ; 6 + 2*(24+6) = 66
-                               lay-start-x sheet-body-width  ; Lay starts at sheet body's right edge = 66
-                               row (quot tile-index 2)  ; Which row (0-2)
-                               col-in-row (mod tile-index 2)  ; Which body sprite in row (0 or 1)
-                               tx (* col-in-row 2)  ; Skip shadow: 0 or 2 (every other column)
-                               ty row
-                               ;; Lay body starts at lay-start-x, sprites are at lay-start-x + padding + tx * (32+6)
-                               x (+ lay-start-x padding (* tx (+ sprite-size padding)))  ; 66 + 6 + tx * 38
-                               y (+ padding (* ty (+ sprite-size padding)))]               ; 6 + ty * 38
+                               sheet-body-width 66  ; 6 + 2*(24+6)
+                               row (quot index 2)
+                               col-in-row (mod index 2)
+                               tx (* col-in-row 2)  ; Skip shadow columns
+                               x (+ sheet-body-width padding (* tx (+ sprite-size padding)))
+                               y (+ padding (* row (+ sprite-size padding)))]
                            [sprite-size sprite-size x y])
                     [24 24 0 0])
                   scaled-width (* sprite-width scale)
                   scaled-height (* sprite-height scale)
                   output-img (BufferedImage. scaled-width scaled-height BufferedImage/TYPE_INT_ARGB)
                   g (.createGraphics output-img)]
-              ;; Draw the sprite region from source to output
               (.drawImage g source-img
                           0 0 scaled-width scaled-height
                           src-x src-y (+ src-x sprite-width) (+ src-y sprite-height)
+                          nil)
+              (.dispose g)
+              (let [output-file (File. output-path)
+                    parent-dir (.getParentFile output-file)]
+                (when (and parent-dir (not (.exists parent-dir)))
+                  (.mkdirs parent-dir)))
+              (ImageIO/write output-img "png" (File. output-path))
+              {:success true
+               :path output-path
+               :size sprite-width
+               :index index
+               :source-region {:x src-x :y src-y :width sprite-width :height sprite-height}})
+            (do
+              (.close zip-file-obj)
+              {:success false :error (str "Entry not found in zip: " zip-entry-path)})))
+        {:success false :error (str "Zip file not found: " zip-path)}))
+    (catch Exception e
+      {:success false :error (str (.getClass (.getName e)) ": " (.getMessage e))})))
+
+;; Export a race sprite from PNG
+;; For :sheet - pass action keyword (:head, :torso-still, etc.)
+;;   PNG stores ONE sprite per action; game rotates/mirrors for 8 directions
+;; For :lay - pass pose index (0-5)
+;; adult: reserved for future child sprite support
+(defn export-race-sprite 
+  [sheet-type race-key action-or-index output-path 
+   & {:keys [adult scale] :or {adult true scale 1}}]
+  (let [_ adult  ; Reserved for future child sprite support
+        index (case sheet-type
+                :sheet (get-action-row action-or-index)
+                :lay action-or-index)]
+    (export-sprite-from-png race-key sheet-type index output-path :scale scale)))
+
+(comment
+  ;; Export standing/walking sprites (18 action types, game rotates for directions)
+  (export-race-sprite :sheet "Human" :head "output/head.png")
+  (export-race-sprite :sheet "Human" :tunic "output/tunic.png")
+  (export-race-sprite :sheet "Human" :torso-still "output/torso-still.png")
+  (export-race-sprite :sheet "Human" :torso-right "output/torso-right.png")
+  (export-race-sprite :sheet "Human" :feet-none "output/feet-none.png")
+  
+  ;; Export lying sprites (6 poses)
+  (export-race-sprite :lay "Human" 0 "output/lay_0.png")
+  (export-race-sprite :lay "Human" 1 "output/lay_1.png")
+  
+  :rcf)
+
+;; ============================================
+;; PNG Crop Functions (PNG 裁剪函数)
+;; ============================================
+
+;; Crop a region from a PNG file in data.zip
+;; Arguments:
+;;   zip-entry-path: Path within zip (e.g., "data/assets/sprite/race/Human.png")
+;;   x, y: Top-left corner of the region to crop
+;;   width, height: Dimensions of the region to crop
+;;   output-path: Where to save the cropped image
+;;   scale: Optional scale factor (default: 1)
+(defn crop-from-png
+  [zip-entry-path x y width height output-path & {:keys [scale] :or {scale 1}}]
+  (try
+    (let [zip-path "base/data.zip"
+          zip-file (File. zip-path)]
+      (if (and (.exists zip-file) (.isFile zip-file))
+        (let [zip-file-obj (ZipFile. zip-path)
+              zip-entry (.getEntry zip-file-obj zip-entry-path)]
+          (if zip-entry
+            (let [entry-stream (.getInputStream zip-file-obj zip-entry)
+                  source-img (ImageIO/read entry-stream)
+                  _ (.close entry-stream)
+                  _ (.close zip-file-obj)
+                  ;; Validate crop region is within image bounds
+                  src-width (.getWidth source-img)
+                  src-height (.getHeight source-img)
+                  _ (when (or (< x 0) (< y 0) (> (+ x width) src-width) (> (+ y height) src-height))
+                      (throw (IllegalArgumentException.
+                              (str "Crop region out of bounds: "
+                                   "image=" src-width "x" src-height ", "
+                                   "crop=[" x "," y "," width "," height "]"))))
+                  scaled-width (* width scale)
+                  scaled-height (* height scale)
+                  output-img (BufferedImage. scaled-width scaled-height BufferedImage/TYPE_INT_ARGB)
+                  g (.createGraphics output-img)]
+              ;; Draw the cropped region from source to output
+              (.drawImage g source-img
+                          0 0 scaled-width scaled-height
+                          x y (+ x width) (+ y height)
                           nil)
               (.dispose g)
               ;; Ensure output directory exists
@@ -509,74 +560,21 @@
               (ImageIO/write output-img "png" (File. output-path))
               {:success true
                :path output-path
-               :size sprite-width
-               :tile-index tile-index
-               :source-region {:x src-x :y src-y :width sprite-width :height sprite-height}})
-            (do
-              (.close zip-file-obj)
-              {:success false :error (str "Entry not found in zip: " zip-entry-path)})))
+               :source-size {:width src-width :height src-height}
+               :crop {:x x :y y :width width :height height}
+               :output-size {:width scaled-width :height scaled-height}})
+            {:success false :error (str "Entry not found in zip: " zip-entry-path)}))
         {:success false :error (str "Zip file not found: " zip-path)}))
     (catch Exception e
       {:success false :error (str (.getClass (.getName e)) ": " (.getMessage e))})))
 
-;; Export a sprite tile to PNG file
-;; This is a simplified version - actual implementation may need to use game's rendering system
-;; Note: Direct texture extraction may not be straightforward due to OpenGL texture management
-;; TextureCoords only contains texture coordinates, not pixel data!
-(defn export-sprite-to-png 
-  [tile-sheet tile-index output-path & {:keys [scale] :or {scale 1}}]
-  (try
-    (when tile-sheet
-      (let [size (.size tile-sheet)
-            scaled-size (* size scale)
-            texture (.getTexture tile-sheet tile-index)
-            img (BufferedImage. scaled-size scaled-size BufferedImage/TYPE_INT_ARGB)
-            g (.createGraphics img)]
-        ;; Note: TextureCoords only contains coordinates (x1, y1, x2, y2) in the texture,
-        ;; NOT the actual pixel data. The texture data is in GPU memory (OpenGL),
-        ;; which cannot be directly accessed from Java.
-        (println "Warning: Cannot extract pixels from TextureCoords.")
-        (println "TextureCoords only contains:" 
-                 "x1=" (try (.x1 texture) (catch Exception _ "N/A"))
-                 "y1=" (try (.y1 texture) (catch Exception _ "N/A"))
-                 "x2=" (try (.x2 texture) (catch Exception _ "N/A"))
-                 "y2=" (try (.y2 texture) (catch Exception _ "N/A")))
-        (println "Use export-sprite-from-png instead to read from source PNG file.")
-        ;; For now, create a placeholder image
-        (.setColor g java.awt.Color/BLACK)
-        (.fillRect g 0 0 scaled-size scaled-size)
-        (.setColor g java.awt.Color/WHITE)
-        (.drawString g (str "Tile " tile-index) 10 20)
-        (.dispose g)
-        (ImageIO/write img "png" (File. output-path))
-        {:success true :path output-path :size size :tile-index tile-index}))
-    (catch Exception e
-      {:success false :error (.getMessage e)})))
-
-;; Convenience function to get and export a race sprite
-;; This function uses the source PNG file method (recommended)
-;; adult: reserved for future use (child sprites support)
-(defn export-race-sprite 
-  [sheet-type race-key action direction output-path 
-   & {:keys [adult scale] :or {adult true scale 1}}]
-  (let [_ adult  ; Reserved for future child sprite support
-        tile-index (get-tile-index sheet-type action direction)]
-    (export-sprite-from-png race-key sheet-type tile-index output-path :scale scale)))
-
-;; Alternative: Export using tile-sheet (creates placeholder, doesn't extract actual pixels)
-(defn export-race-sprite-from-sheet
-  [sheet-type race-key action direction output-path 
-   & {:keys [adult scale] :or {adult true scale 1}}]
-  (let [tile-sheet (get-race-sheet sheet-type race-key :adult adult)
-        tile-index (get-tile-index sheet-type action direction)]
-    (if tile-sheet
-      (export-sprite-to-png tile-sheet tile-index output-path :scale scale)
-      {:success false :error "Failed to get tile sheet"})))
-
-(comment 
-  (export-race-sprite :sheet "Human" :head 0 "output/head_0.png")
-  (export-race-sprite :sheet "Human" :tunic 0 "output/tunic_0.png")
-  (export-race-sprite :sheet "Human" :torso-still 0 "output/torso-still_0.png") 
+(comment
+  ;; Crop from any PNG in data.zip
+  (crop-from-png "data/assets/sprite/race/Human.png"
+                  6 6 24 24 "output/test.png")
+  
+  (crop-from-png "data/assets/sprite/race/Human.png"
+                 66 0 380 114 "output/lay-section.png")
   :rcf)
 
 (comment
