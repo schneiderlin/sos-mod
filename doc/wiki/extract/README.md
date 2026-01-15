@@ -7,7 +7,7 @@ This folder contains detailed documentation for extracting each type of game dat
 ### Data Extraction
 | Document | Description | Status |
 |----------|-------------|--------|
-| [resources.md](resources.md) | Resources/Items extraction | Pending |
+| [resources.md](resources.md) | Resources/Items extraction | ✅ Done |
 | [races.md](races.md) | Race data extraction | Pending |
 | [technologies.md](technologies.md) | Tech tree extraction | Pending |
 | [buildings.md](buildings.md) | Buildings/Rooms extraction | Pending |
@@ -68,4 +68,31 @@ Brief description of what we're extracting.
 - [ ] Task 1
 - [ ] Task 2
 ```
+
+## Code Organization
+
+Code is split between two locations:
+
+### `src/game/` - Reusable Game API
+Functions for accessing game data, useful for both wiki extraction AND modding.
+
+| File | Description |
+|------|-------------|
+| `resource.clj` | Resource registry access |
+| `sprite.clj` | Sprite/icon extraction |
+| *more to come* | |
+
+### `src/extract/` - Extraction Scripts
+Wiki-specific extraction code that uses the game API.
+
+| File | Description |
+|------|-------------|
+| `resource_extract.clj` | Extract resources to EDN |
+| *more to come* | |
+
+### Why This Split?
+
+1. **Reusability**: Game API code can be used for modding, not just wiki
+2. **Separation**: Extraction logic (what to export) vs access logic (how to read)
+3. **Testing**: Game API can be tested independently
 

@@ -20,15 +20,17 @@ Items/materials in the game.
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| All Resources | `RESOURCES.ALL()` | High | Pending |
-| Stone | `RESOURCES.STONE()` | High | Pending |
-| Wood | `RESOURCES.WOOD()` | High | Pending |
-| Livestock | `RESOURCES.LIVESTOCK()` | High | Pending |
-| Minables | `RESOURCES.minables()` | Medium | Pending |
-| Growables | `RESOURCES.growable()` | Medium | Pending |
-| Drinks | `RESOURCES.DRINKS()` | Medium | Pending |
-| Edibles | `RESOURCES.EDI()` | Medium | Pending |
+| All Resources | `RESOURCES.ALL()` | High | ✅ Done |
+| Stone | `RESOURCES.STONE()` | High | ✅ Done |
+| Wood | `RESOURCES.WOOD()` | High | ✅ Done |
+| Livestock | `RESOURCES.LIVESTOCK()` | High | ✅ Done |
+| Minables | `RESOURCES.minables()` | Medium | ✅ Done |
+| Growables | `RESOURCES.growable()` | Medium | ✅ Done |
+| Drinks | `RESOURCES.DRINKS()` | Medium | ✅ Done |
+| Edibles | `RESOURCES.EDI()` | Medium | ✅ Done |
 
+**Game API**: `src/game/resource.clj`
+**Extraction**: `src/extract/resource_extract.clj`
 **Details Doc**: `doc/wiki/extract/resources.md`
 
 ---
@@ -38,13 +40,15 @@ Playable and non-playable species.
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| All Races | `RACES.all()` | High | Pending |
-| Playable Races | `RACES.playable()` | High | Pending |
-| Race Stats | `Race.stats` | High | Pending |
-| Race Appearance | `Race.appearance` | Medium | Pending |
-| Race Bio | `Race.bio` | Medium | Pending |
-| Race Boosts | `RACES.boosts()` | Low | Pending |
+| All Races | `RACES.all()` | High | ✅ Done |
+| Playable Races | `RACES.playable()` | High | ✅ Done |
+| Race Stats | `Race.stats` | High | ✅ Done |
+| Race Appearance | `Race.appearance` | Medium | ✅ Done |
+| Race Bio | `Race.bio` | Medium | ✅ Done |
+| Race Boosts | `RACES.boosts()` | Low | ✅ Done |
 
+**Game API**: `src/game/race.clj`
+**Extraction**: `src/extract/race.clj`
 **Details Doc**: `doc/wiki/extract/races.md`
 
 ---
@@ -54,11 +58,13 @@ Research tree and unlockables.
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| All Techs | `TECHS.ALL()` | High | Pending |
-| Tech Trees | `TECHS.TREES()` | High | Pending |
-| Tech Costs | `TECHS.COSTS()` | Medium | Pending |
-| Tech Requirements | `TECH.requires()` | Medium | Pending |
+| All Techs | `TECHS.ALL()` | High | ✅ Done |
+| Tech Trees | `TECHS.TREES()` | High | ✅ Done |
+| Tech Costs | `TECHS.COSTS()` | Medium | ✅ Done |
+| Tech Requirements | `TECH.requires()` | Medium | ✅ Done |
 
+**Game API**: `src/game/tech.clj`
+**Extraction**: `src/extract/tech.clj`
 **Details Doc**: `doc/wiki/extract/technologies.md`
 
 ---
@@ -68,18 +74,20 @@ All placeable structures.
 
 | Category | Examples | Priority | Status |
 |----------|----------|----------|--------|
-| Food Production | Farm, Fishery, Hunter, Pasture, Orchard | High | Pending |
-| Industry | Mine, Refiner, Workshop, Woodcutter | High | Pending |
-| Infrastructure | Stockpile, Hauler, Station, Gate | High | Pending |
-| Services | Tavern, Bath, Market, Arena, Stage | Medium | Pending |
-| Health | Hospital, Physician, Asylum | Medium | Pending |
-| Knowledge | School, Library, University, Laboratory | Medium | Pending |
-| Law | Guard, Prison, Court, Execution | Medium | Pending |
-| Military | Training, Artillery, Supply | Medium | Pending |
-| Spirit | Temple, Shrine, Grave, Dump | Low | Pending |
-| Housing | Home, Chamber | Low | Pending |
-| Water | Pump, Canal, Drain, Pool | Low | Pending |
+| Food Production | Farm, Fishery, Hunter, Pasture, Orchard | High | ✅ Done |
+| Industry | Mine, Refiner, Workshop, Woodcutter | High | ✅ Done |
+| Infrastructure | Stockpile, Hauler, Station, Gate | High | ✅ Done |
+| Services | Tavern, Bath, Market, Arena, Stage | Medium | ✅ Done |
+| Health | Hospital, Physician, Asylum | Medium | ✅ Done |
+| Knowledge | School, Library, University, Laboratory | Medium | ✅ Done |
+| Law | Guard, Prison, Court, Execution | Medium | ✅ Done |
+| Military | Training, Artillery, Supply | Medium | ✅ Done |
+| Spirit | Temple, Shrine, Grave, Dump | Low | ✅ Done |
+| Housing | Home, Chamber | Low | ✅ Done |
+| Water | Pump, Canal, Drain, Pool | Low | ✅ Done |
 
+**Game API**: `src/game/building.clj`
+**Extraction**: `src/extract/building.clj`
 **Details Doc**: `doc/wiki/extract/buildings.md`
 
 ---
@@ -89,14 +97,16 @@ Game constants and classifications.
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| Terrains | `TERRAINS` | High | Pending |
-| Climates | `CLIMATES` | Medium | Pending |
-| Diseases | `DISEASES` | Medium | Pending |
-| Traits | `TRAITS` | Medium | Pending |
-| Needs | `NEEDS` | Medium | Pending |
-| Humanoid Classes | `HCLASSES` | Low | Pending |
-| Humanoid Types | `HTYPES` | Low | Pending |
+| Terrains | `TERRAINS` | High | ✅ Done |
+| Climates | `CLIMATES` | Medium | ✅ Done |
+| Diseases | `DISEASES` | Medium | ✅ Done |
+| Traits | `TRAITS` | Medium | ✅ Done |
+| Needs | `NEEDS` | Medium | ✅ Done |
+| Humanoid Classes | `HCLASSES` | Low | ✅ Done |
+| Humanoid Types | `HTYPES` | Low | ✅ Done |
 
+**Game API**: `src/game/type.clj`
+**Extraction**: `src/extract/type.clj`
 **Details Doc**: `doc/wiki/extract/types.md`
 
 ---
@@ -106,10 +116,12 @@ All stat modifiers and bonuses.
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| All Boostables | `BOOSTABLES` | Medium | Pending |
-| Boost Categories | `BoostableCat` | Medium | Pending |
-| Boost Specs | `BoostSpecs` | Low | Pending |
+| All Boostables | `BOOSTING.ALL()` | Medium | ✅ Done |
+| Boost Categories | `BOOSTABLES.colls()` | Medium | ✅ Done |
+| Boost Specs | `BoostSpecs` | Low | ✅ Done |
 
+**Game API**: `src/game/booster.clj`
+**Extraction**: `src/extract/booster.clj`
 **Existing Doc**: `doc/booster/boosters_all.md`
 **Details Doc**: `doc/wiki/extract/boosters.md`
 
@@ -120,19 +132,26 @@ Religious systems.
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| All Religions | `RELIGIONS` | Low | Pending |
+| All Religions | `RELIGIONS.ALL()` | Low | ✅ Done |
+| Religion Properties | `Religion` | Low | ✅ Done |
+| Opposition Matrix | `Religion.opposition()` | Low | ✅ Done |
+| Religion Boosts | `Religion.boosts` | Low | ✅ Done |
 
+**Game API**: `src/game/religion.clj`
+**Extraction**: `src/extract/religion.clj`
 **Details Doc**: `doc/wiki/extract/religions.md`
 
 ---
 
-### 8. Structures (结构) - `init.structure`
-World structures.
+### 8. Structures (结构) - `init.structure` ✅ Done
+World structures (building materials for walls, floors, ceilings).
 
 | Data Type | Java Class | Priority | Status |
 |-----------|-----------|----------|--------|
-| All Structures | `STRUCTURES` | Low | Pending |
+| All Structures | `STRUCTURES` | Low | ✅ Done |
 
+**Game API**: `src/game/structure.clj`
+**Extraction**: `src/extract/structure.clj`
 **Details Doc**: `doc/wiki/extract/structures.md`
 
 ---
@@ -245,10 +264,10 @@ output/
 - [ ] Document extraction patterns
 
 ### Phase 2: Core Data Extraction
-- [ ] Resources extraction (`src/game/resource.clj`)
-- [ ] Races extraction (extend `src/game/sprite.clj`)
-- [ ] Technologies extraction (`src/game/tech.clj`)
-- [ ] Buildings/Rooms extraction (`src/game/building.clj`)
+- [x] Resources extraction (`src/game/resource.clj`)
+- [x] Races extraction (`src/game/race.clj`)
+- [x] Technologies extraction (`src/game/tech.clj`)
+- [x] Buildings/Rooms extraction (`src/game/building.clj`)
 
 ### Phase 3: Sprite Extraction
 - [ ] Complete race sprite export (all races)
@@ -304,10 +323,16 @@ output/
 
 | Feature | Code Location | Doc Location |
 |---------|--------------|--------------|
+| Resources | `src/game/resource.clj`, `src/extract/resource.clj` | `doc/wiki/extract/resources.md` |
+| Races | `src/game/race.clj`, `src/extract/race.clj` | `doc/wiki/extract/races.md` |
+| Technologies | `src/game/tech.clj`, `src/extract/tech.clj` | `doc/wiki/extract/technologies.md` |
+| Buildings/Rooms | `src/game/building.clj`, `src/extract/building.clj` | `doc/wiki/extract/buildings.md` |
+| Types/Enums | `src/game/type.clj`, `src/extract/type.clj` | `doc/wiki/extract/types.md` |
+| Religions | `src/game/religion.clj`, `src/extract/religion.clj` | `doc/wiki/extract/religions.md` |
+| Boosters | `src/game/booster.clj`, `src/extract/booster.clj` | `doc/wiki/extract/boosters.md` |
 | Race Sprites | `src/game/sprite.clj` | `doc/src-code/race_sprite_usage.md` |
 | Static Config | - | `doc/src-code/static_config_data.md` |
 | Sprite Loading | - | `doc/src-code/sprite_loading.md` |
-| Boosters | - | `doc/booster/boosters_all.md` |
 
 ---
 
@@ -321,5 +346,5 @@ output/
 ---
 
 *Last Updated: 2026-01-15*
-*Status: Planning Phase*
+*Status: Phase 2 - Core Data Extraction (Resources ✅, Races ✅, Technologies ✅, Buildings ✅, Types ✅, Religions ✅, Boosters ✅)*
 
