@@ -8,16 +8,18 @@
    [java.util.zip ZipFile]
    [javax.imageio ImageIO]))
 
-"base/data.zip/data/assets/sprite/里面有各种 sprite sheet"
-"最外面一层 gap 的宽度是 6"
-"小图标 18 行 2 列, 24 * 24"
 
-;; Note: SheetType, GameSheets, and Textures are imported for type hints
-;; and potential future use. They may be used in function parameters or examples.
+;; ┌─────────────────────┬─────────────────────┐
+;; │     LEFT HALF       │     RIGHT HALF      │
+;; │   (224px wide)      │    (224px wide)     │
+;; │                     │                     │
+;; │   Body/Color        │   Normal Maps       │
+;; │   Sprites           │   (for lighting)    │
+;; │                     │                     │
+;; │  Sheet: 18 rows     │  Sheet: 18 rows     │
+;; │  Lay: 3×4 = 12      │  Lay: 3×4 = 12      │
+;; └─────────────────────┴─────────────────────┘
 
-;; ============================================
-;; UI Icons (图标)
-;; ============================================
 
 ;; Get the Icons instance
 (defn icons []
@@ -300,14 +302,6 @@
 (defn special-sprites []
   (SPRITES/specials))
 
-;; Get UI image maker
-(defn ui-image []
-  (UI/image))
-
-;; Get UI image by path
-(defn get-ui-image [path]
-  (let [image-maker (ui-image)]
-    (.get image-maker path)))
 
 ;; ============================================
 ;; Race Sprite Functions (种族 Sprite 函数)
@@ -375,53 +369,25 @@
 (defn get-action-row [action]
   (get action-rows action 0))
 
-;; Legacy function for game's internal tile index (action * 8 + direction)
-;; This is used by the game engine, not needed for PNG export
-(defn get-tile-index [sheet-type action direction]
-  (case sheet-type
-    :sheet (+ (* (get-action-row action) 8) (mod direction 8))
-    :lay (mod direction 6)
-    0))
 
 (comment 
   (get-action-row :head) ;; => 16
   (get-action-row :torso-still) ;; => 6
   :rcf)
 
-;; Get texture coordinates for a tile
-;; Returns a TextureCoords object, which contains:
-;; - x1, y1, x2, y2: coordinates in the OpenGL texture (0.0-1.0 normalized)
-;; - width, height: pixel dimensions
-;; NOTE: TextureCoords does NOT contain pixel data!
-;; The actual texture data is stored in GPU memory (OpenGL) and cannot be directly accessed.
-;; To extract pixels, you must either:
-;; 1. Read from the source PNG file (use export-sprite-from-png)
-;; 2. Render to a framebuffer and read pixels (complex, requires OpenGL context)
-(defn get-tile-texture [tile-sheet tile-index]
-  (try
-    (when tile-sheet
-      (.getTexture tile-sheet tile-index))
-    (catch Exception e
-      (println "Error getting texture:" (.getMessage e))
-      nil)))
-
-;; Get tile sheet information
-(defn tile-sheet-info [tile-sheet]
-  (when tile-sheet
-    (try
-      {:size (.size tile-sheet)
-       :tiles (.tiles tile-sheet)
-       :width (try (.width tile-sheet) (catch Exception _ nil))
-       :height (try (.height tile-sheet) (catch Exception _ nil))}
-      (catch Exception e
-        {:error (.getMessage e)}))))
-
 ;; Export sprite from original PNG file
 ;; This reads directly from the source PNG file in data.zip and extracts the sprite region
-;; For :sheet - index is row (0-17, one per action type)
-;; For :lay - index is pose (0-5)
+;; 
+;; PNG layout (448x546 pixels):
+;;   Left half (0-223): body/color sprites
+;;   Right half (224-447): normal maps
+;;
+;; For :sheet - index is row (0-17), use :normal true for normal map version
+;; For :lay - index is tile (0-23): 
+;;   0-11: body sprites (left half, 3 rows × 4 cols)
+;;   12-23: normal maps (right half, 3 rows × 4 cols)
 (defn export-sprite-from-png
-  [race-key sheet-type index output-path & {:keys [scale] :or {scale 1}}]
+  [race-key sheet-type index output-path & {:keys [scale normal] :or {scale 1 normal false}}]
   (try
     (let [zip-path "base/data.zip"
           zip-entry-path (str "data/assets/sprite/race/" race-key ".png")
@@ -434,24 +400,30 @@
                   source-img (ImageIO/read entry-stream)
                   _ (.close entry-stream)
                   _ (.close zip-file-obj)
-                  ;; PNG layout: 448x546 pixels
-                  ;; Left section (sheet): 18 rows x 2 cols (body + shadow), 24x24 each
-                  ;; Right section (lay): 3 rows x 4 cols, 32x32 each, 6 body sprites
+                  ;; PNG layout: 448x546 pixels, split left/right
+                  ;; Left half (224px): body sprites
+                  ;; Right half (224px): normal maps
+                  half-width 224  ; PNG is split in half
+                  normal-offset (if normal half-width 0)
                   [sprite-width sprite-height src-x src-y]
                   (case sheet-type
                     :sheet (let [sprite-size 24
                                  padding 6
-                                 row index  ; Direct row index (0-17)
-                                 x (+ padding 0)  ; Column 0 (body), x = 6
-                                 y (+ padding (* row (+ sprite-size padding)))]  ; 6 + row * 30
+                                 row index
+                                 x (+ normal-offset padding)
+                                 y (+ padding (* row (+ sprite-size padding)))]
                              [sprite-size sprite-size x y])
                     :lay (let [sprite-size 32
                                padding 6
-                               sheet-body-width 66  ; 6 + 2*(24+6)
-                               row (quot index 2)
-                               col-in-row (mod index 2)
-                               tx (* col-in-row 2)  ; Skip shadow columns
-                               x (+ sheet-body-width padding (* tx (+ sprite-size padding)))
+                               cols-per-row 4
+                               sheet-section-width 66  ; where sheet section ends
+                               ;; Handle indices 0-23: 0-11 body, 12-23 normal
+                               is-normal-index (>= index 12)
+                               actual-index (if is-normal-index (- index 12) index)
+                               x-offset (if is-normal-index half-width 0)
+                               row (quot actual-index cols-per-row)
+                               col (mod actual-index cols-per-row)
+                               x (+ x-offset sheet-section-width padding (* col (+ sprite-size padding)))
                                y (+ padding (* row (+ sprite-size padding)))]
                            [sprite-size sprite-size x y])
                     [24 24 0 0])
@@ -482,31 +454,52 @@
       {:success false :error (str (.getClass (.getName e)) ": " (.getMessage e))})))
 
 ;; Export a race sprite from PNG
+;; 
+;; PNG is split LEFT/RIGHT:
+;;   Left half (224px): body/color sprites
+;;   Right half (224px): normal maps (for lighting)
+;;
 ;; For :sheet - pass action keyword (:head, :torso-still, etc.)
-;;   PNG stores ONE sprite per action; game rotates/mirrors for 8 directions
-;; For :lay - pass pose index (0-5)
-;; adult: reserved for future child sprite support
+;;   Use :normal true to get the normal map version
+;; For :lay - pass tile index (0-23):
+;;   0-11: body sprites (left half, 3 rows × 4 cols)
+;;   12-23: normal maps (right half, 3 rows × 4 cols)
+;;
+;; Options:
+;;   :scale - scale factor (default 1)
+;;   :normal - for :sheet, get normal map instead of body (default false)
 (defn export-race-sprite 
   [sheet-type race-key action-or-index output-path 
-   & {:keys [adult scale] :or {adult true scale 1}}]
+   & {:keys [adult scale normal] :or {adult true scale 1 normal false}}]
   (let [_ adult  ; Reserved for future child sprite support
         index (case sheet-type
                 :sheet (get-action-row action-or-index)
                 :lay action-or-index)]
-    (export-sprite-from-png race-key sheet-type index output-path :scale scale)))
+    (export-sprite-from-png race-key sheet-type index output-path :scale scale :normal normal)))
 
 (comment
-  ;; Export standing/walking sprites (18 action types, game rotates for directions)
+  ;; === SHEET sprites (standing/walking) ===
+  ;; 18 action types, game rotates for 8 directions
   (export-race-sprite :sheet "Human" :head "output/head.png")
+  (export-race-sprite :sheet "Human" :head "output/head_normal.png" :normal true)
   (export-race-sprite :sheet "Human" :tunic "output/tunic.png")
   (export-race-sprite :sheet "Human" :torso-still "output/torso-still.png")
-  (export-race-sprite :sheet "Human" :torso-right "output/torso-right.png")
-  (export-race-sprite :sheet "Human" :feet-none "output/feet-none.png")
   
-  ;; Export lying sprites (6 poses)
-  (export-race-sprite :lay "Human" 0 "output/lay_0.png")
-  (export-race-sprite :lay "Human" 1 "output/lay_1.png")
+  ;; === LAY sprites (lying down) ===
+  ;; 24 tiles total: 12 body + 12 normal maps
+  ;; Body sprites (indices 0-11):
+  (export-race-sprite :lay "Human" 0 "output/lay_0.png")   ; row 0, col 0
+  (export-race-sprite :lay "Human" 1 "output/lay_1.png")   ; row 0, col 1
+  (export-race-sprite :lay "Human" 2 "output/lay_2.png")   ; row 0, col 2
+  (export-race-sprite :lay "Human" 3 "output/lay_3.png")   ; row 0, col 3
+  (export-race-sprite :lay "Human" 4 "output/lay_4.png")   ; row 1, col 0
+  (export-race-sprite :lay "Human" 5 "output/lay_5.png")   ; row 1, col 1
+  ;; ... up to 11
   
+  ;; Normal map sprites (indices 12-23):
+  (export-race-sprite :lay "Human" 12 "output/lay_12_normal.png")  ; row 0, col 0 (normal)
+  (export-race-sprite :lay "Human" 13 "output/lay_13_normal.png")  ; row 0, col 1 (normal)
+  ;; ... up to 23
   :rcf)
 
 ;; ============================================
