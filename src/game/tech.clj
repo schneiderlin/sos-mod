@@ -236,8 +236,11 @@
 (defn color->hex
   "Convert COLOR to hex string."
   [^COLOR color]
-  (let [rgb (.toIntRGB color)]
-    (format "#%06X" (bit-and rgb 0xFFFFFF))))
+  (let [r (bit-and (.red color) 0xFF)
+        g (bit-and (.green color) 0xFF)
+        b (bit-and (.blue color) 0xFF)
+        rgb (bit-or r (bit-shift-left g 8) (bit-shift-left b 16))]
+    (format "#%06X" rgb)))
 
 (defn color->map
   "Convert COLOR to RGB map."

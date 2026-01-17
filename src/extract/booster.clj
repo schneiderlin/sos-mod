@@ -269,6 +269,10 @@
    (extract-by-category (str output-dir "/data/boosters"))
    (println "Done!")))
 
+(comment
+  (extract-all)
+  :rcf)
+
 ;; ============================================
 ;; Individual Queries
 ;; ============================================

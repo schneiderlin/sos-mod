@@ -40,6 +40,10 @@
   []
   (mapv extract-race-full (race/all-races)))
 
+(comment
+  (extract-all-races)
+  :rcf)
+
 (defn extract-playable-races
   "Extract only playable races."
   []
@@ -69,6 +73,10 @@
      :matrix (vec (for [r1 races]
                     (vec (for [r2 races]
                            (race/race-relation r1 r2)))))}))
+
+(comment
+  (build-race-relations-matrix)
+  :rcf)
 
 ;; ============================================
 ;; File Output
@@ -138,6 +146,10 @@
     (doseq [r (filter #(not (:playable %)) (:races data))]
       (println (str "  " (:key r) " - " (get-in r [:info :name]))))
     (println)))
+
+(comment
+  (extract-races-summary)
+  :rcf)
 
 (defn race-details-report
   "Generate detailed report for a specific race."
@@ -231,6 +243,10 @@
    (extract-races-edn (str output-dir "/data"))
    (extract-race-relations-edn (str output-dir "/data"))
    (println "Done!")))
+
+(comment
+  (extract-all)
+  :rcf)
 
 ;; ============================================
 ;; Individual Queries

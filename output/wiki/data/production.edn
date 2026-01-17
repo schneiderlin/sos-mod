@@ -1,0 +1,1462 @@
+{:version "1.0",
+ :extracted-at "2026-01-17T05:45:17.065765900Z",
+ :summary {:total-production-rooms 49},
+ :rooms
+ [{:description "种植并砍伐树木。将会持续生产木材。",
+   :is-production-room true,
+   :category {:name "其他", :main-name "工业", :room-count 2},
+   :icon-path "sprites/buildings/_WOODCUTTER/icon.png",
+   :type-index 0,
+   :key "_WOODCUTTER",
+   :index 13,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "伐木场",
+   :type nil,
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 0,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "_WOOD",
+       :rate-per-second 0.006944444444444444}]}]}
+  {:description
+   "在希克斯世界生活，有时会感到压力山大，这可能会导致精神错乱。精神病院可以让你收容精神错乱的人，并治愈他们。",
+   :is-production-room true,
+   :category {:name "健康", :main-name "服务", :room-count 8},
+   :icon-path "sprites/buildings/_ASYLUM/icon.png",
+   :type-index 0,
+   :key "_ASYLUM",
+   :index 30,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 2},
+   :name "精神病院",
+   :type nil,
+   :degrade-rate 0.75,
+   :has-bonus false,
+   :industries
+   [{:index 3,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "RATION", :rate-per-second 0.001736111111111111}],
+     :outputs []}]}
+  {:description "为你生病的臣民提供治疗的地方。给他们更大的生还几率。",
+   :is-production-room true,
+   :category {:name "健康", :main-name "服务", :room-count 8},
+   :icon-path "sprites/buildings/_HOSPITAL/icon.png",
+   :type-index 0,
+   :key "_HOSPITAL",
+   :index 31,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "TOOL", :area-cost 0.0}],
+    :stats-count 2},
+   :name "医院",
+   :type nil,
+   :degrade-rate 0.75,
+   :has-bonus false,
+   :industries
+   [{:index 4,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FABRIC", :rate-per-second 0.001736111111111111}
+      {:resource-key "OPIATES",
+       :rate-per-second 0.001736111111111111}],
+     :outputs []}]}
+  {:description "沿着岸边捕鱼。",
+   :is-production-room true,
+   :category {:name "水产", :main-name "农业", :room-count 1},
+   :icon-path "sprites/buildings/FISHERY_NORMAL/icon.png",
+   :type-index 0,
+   :key "FISHERY_NORMAL",
+   :index 47,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 5},
+   :name "渔场",
+   :type "FISHERY",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 5,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "FISH",
+       :rate-per-second 0.0024305555555555556}]}]}
+  {:description "黏土矿坑从黏土矿藏中挖掘黏土。",
+   :is-production-room true,
+   :category {:name "采矿", :main-name "工业", :room-count 6},
+   :icon-path "sprites/buildings/MINE_CLAY/icon.png",
+   :type-index 0,
+   :key "MINE_CLAY",
+   :index 48,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "黏土矿坑",
+   :type "MINE",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 6,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "CLAY",
+       :rate-per-second 0.0026041666666666665}]}]}
+  {:description "矿场从地下开采矿藏。 它的效率取决于矿藏含量以及放置的辅助设备数量。",
+   :is-production-room true,
+   :category {:name "采矿", :main-name "工业", :room-count 6},
+   :icon-path "sprites/buildings/MINE_COAL/icon.png",
+   :type-index 1,
+   :key "MINE_COAL",
+   :index 49,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "煤矿场",
+   :type "MINE",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 7,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "COAL", :rate-per-second 0.006944444444444444}]}]}
+  {:description "矿场从地下开采矿藏。 它的效率取决于矿藏含量以及放置的辅助设备数量。",
+   :is-production-room true,
+   :category {:name "采矿", :main-name "工业", :room-count 6},
+   :icon-path "sprites/buildings/MINE_GEM/icon.png",
+   :type-index 2,
+   :key "MINE_GEM",
+   :index 50,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "宝石矿场",
+   :type "MINE",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 8,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "GEM", :rate-per-second 3.4722222222222224E-4}]}]}
+  {:description "矿场从地下开采矿藏。 它的效率取决于矿藏含量以及放置的辅助设备数量。",
+   :is-production-room true,
+   :category {:name "采矿", :main-name "工业", :room-count 6},
+   :icon-path "sprites/buildings/MINE_ORE/icon.png",
+   :type-index 3,
+   :key "MINE_ORE",
+   :index 51,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "矿石矿场",
+   :type "MINE",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 9,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "ORE", :rate-per-second 0.0026041666666666665}]}]}
+  {:description "矿场从地下开采矿藏。 它的效率取决于矿藏含量以及放置的辅助设备数量。",
+   :is-production-room true,
+   :category {:name "采矿", :main-name "工业", :room-count 6},
+   :icon-path "sprites/buildings/MINE_SITHILON/icon.png",
+   :type-index 4,
+   :key "MINE_SITHILON",
+   :index 52,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "西西隆矿场",
+   :type "MINE",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 10,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "SITHILON",
+       :rate-per-second 1.7361111111111112E-4}]}]}
+  {:description "矿场从地下开采矿藏。 它的效率取决于矿藏含量以及放置的辅助设备数量。",
+   :is-production-room true,
+   :category {:name "采矿", :main-name "工业", :room-count 6},
+   :icon-path "sprites/buildings/MINE_STONE/icon.png",
+   :type-index 5,
+   :key "MINE_STONE",
+   :index 53,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 4},
+   :name "石矿场",
+   :type "MINE",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 11,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs [{:resource-key "_STONE", :rate-per-second 0.0078125}]}]}
+  {:description "种植棉花。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_COTTON/icon.png",
+   :type-index 0,
+   :key "FARM_COTTON",
+   :index 54,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "COTTON", :area-cost 0.1}],
+    :stats-count 4},
+   :name "棉花农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 12,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "COTTON",
+       :rate-per-second 0.005208333333333333}]}]}
+  {:description "种植水果。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_FRUIT/icon.png",
+   :type-index 1,
+   :key "FARM_FRUIT",
+   :index 55,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "FRUIT", :area-cost 0.1}],
+    :stats-count 4},
+   :name "水果农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 13,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "FRUIT",
+       :rate-per-second 0.0036458333333333334}]}]}
+  {:description "种植谷物。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_GRAIN/icon.png",
+   :type-index 2,
+   :key "FARM_GRAIN",
+   :index 56,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "GRAIN", :area-cost 0.1}],
+    :stats-count 4},
+   :name "谷物农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 14,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "GRAIN",
+       :rate-per-second 0.006944444444444444}]}]}
+  {:description "种植药草。药草不能直接食用，但有其他用途。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_HERB/icon.png",
+   :type-index 3,
+   :key "FARM_HERB",
+   :index 57,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "HERB", :area-cost 0.1}],
+    :stats-count 4},
+   :name "香草农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 15,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "HERB",
+       :rate-per-second 4.3402777777777775E-4}]}]}
+  {:description "生长蘑菇。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_MUSHROOM/icon.png",
+   :type-index 4,
+   :key "FARM_MUSHROOM",
+   :index 58,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources [{:resource-key "MUSHROOM", :area-cost 0.1}],
+    :stats-count 4},
+   :name "蘑菇农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 16,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MUSHROOM",
+       :rate-per-second 0.0019097222222222224}]}]}
+  {:description "种植鸦片。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_SPICES/icon.png",
+   :type-index 5,
+   :key "FARM_SPICES",
+   :index 59,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "OPIATES", :area-cost 0.1}],
+    :stats-count 4},
+   :name "鸦片农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 17,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "OPIATES",
+       :rate-per-second 4.3402777777777775E-4}]}]}
+  {:description "种植蔬菜。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/FARM_VEG/icon.png",
+   :type-index 6,
+   :key "FARM_VEG",
+   :index 60,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "VEGETABLE", :area-cost 0.1}],
+    :stats-count 4},
+   :name "蔬菜农场",
+   :type "FARM",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 18,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "VEGETABLE",
+       :rate-per-second 0.0036458333333333334}]}]}
+  {:description
+   "种植水果。需要很长时间才能开始产出，并且对劳动力不足和突发事件非常敏感。不过，在投入之后，它比同等规模的农场产量更高，并且对土壤肥力的依赖较小。",
+   :is-production-room true,
+   :category {:name "农场", :main-name "农业", :room-count 8},
+   :icon-path "sprites/buildings/ORCHARD_FRUIT/icon.png",
+   :type-index 0,
+   :key "ORCHARD_FRUIT",
+   :index 61,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "FRUIT", :area-cost 0.0}],
+    :stats-count 4},
+   :name "果园",
+   :type "ORCHARD",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 19,
+     :ai-multiplier 0.75,
+     :inputs [],
+     :outputs
+     [{:resource-key "FRUIT",
+       :rate-per-second 0.004253472222222223}]}]}
+  {:description
+   "繁殖原牛以生产肉类和丰富的毛皮。需要牲畜来填充牧场。土壤肥力影响牧场可以容纳的动物数量。与农场不同，每个工人生产的数量不受肥力影响。",
+   :is-production-room true,
+   :category {:name "牧场", :main-name "农业", :room-count 6},
+   :icon-path "sprites/buildings/PASTURE_AUR/icon.png",
+   :type-index 0,
+   :key "PASTURE_AUR",
+   :index 62,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "_WOOD", :area-cost 0.1}],
+    :stats-count 4},
+   :name "原牛牧场",
+   :type "PASTURE",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 20,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MEAT", :rate-per-second 9.722222222222223E-4}
+      {:resource-key "LEATHER", :rate-per-second 9.722222222222223E-4}
+      {:resource-key "_LIVESTOCK",
+       :rate-per-second 1.5190972222222222E-4}]}]}
+  {:description
+   "饲养巴尔蒂爬虫以生产肉类，但几乎只有贾尔蒂米人知道如何应付这种生物。牧场需要牲畜来填充。巴尔蒂爬虫饲养场不依赖土壤肥力，而在山洞中运作良好。",
+   :is-production-room true,
+   :category {:name "牧场", :main-name "农业", :room-count 6},
+   :icon-path "sprites/buildings/PASTURE_BALTI/icon.png",
+   :type-index 1,
+   :key "PASTURE_BALTI",
+   :index 63,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources [{:resource-key "_WOOD", :area-cost 0.1}],
+    :stats-count 4},
+   :name "巴尔蒂爬虫饲养场",
+   :type "PASTURE",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 21,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MEAT", :rate-per-second 0.0012152777777777778}
+      {:resource-key "_LIVESTOCK",
+       :rate-per-second 4.8611111111111115E-5}]}]}
+  {:description
+   "繁殖巨猪以生产肉类。需要牲畜来填充牧场。土壤肥力影响牧场可以容纳的动物数量。与农场不同，每个工人生产的数量不受肥力影响。",
+   :is-production-room true,
+   :category {:name "牧场", :main-name "农业", :room-count 6},
+   :icon-path "sprites/buildings/PASTURE_ENT/icon.png",
+   :type-index 2,
+   :key "PASTURE_ENT",
+   :index 64,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "_WOOD", :area-cost 0.1}],
+    :stats-count 4},
+   :name "巨猪牧场",
+   :type "PASTURE",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 22,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MEAT", :rate-per-second 0.0019444444444444446}
+      {:resource-key "_LIVESTOCK",
+       :rate-per-second 1.5190972222222222E-4}]}]}
+  {:description
+   "繁殖圆齿龙以生产肉类和蛋类。需要牲畜来填充牧场。土壤肥力影响牧场可以容纳的动物数量。与农场不同，每个工人生产的数量不受肥力影响。",
+   :is-production-room true,
+   :category {:name "牧场", :main-name "农业", :room-count 6},
+   :icon-path "sprites/buildings/PASTURE_GLOBDIEN/icon.png",
+   :type-index 3,
+   :key "PASTURE_GLOBDIEN",
+   :index 65,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "_WOOD", :area-cost 0.1}],
+    :stats-count 4},
+   :name "圆齿龙牧场",
+   :type "PASTURE",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 23,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MEAT", :rate-per-second 6.076388888888889E-4}
+      {:resource-key "EGG", :rate-per-second 0.0018229166666666667}
+      {:resource-key "_LIVESTOCK",
+       :rate-per-second 1.5190972222222222E-4}]}]}
+  {:description "饲养强大的战兽，抑或芬迪伦，这是战兽的正式名称。战兽可用作我们士兵的载具。",
+   :is-production-room true,
+   :category {:name "牧场", :main-name "农业", :room-count 6},
+   :icon-path "sprites/buildings/PASTURE_MOUNT/icon.png",
+   :type-index 4,
+   :key "PASTURE_MOUNT",
+   :index 66,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "_WOOD", :area-cost 0.1}],
+    :stats-count 4},
+   :name "战兽牧场",
+   :type "PASTURE",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 24,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "WEAPON_MOUNT",
+       :rate-per-second 1.7361111111111112E-4}]}]}
+  {:description
+   "繁殖绵盘羊以生产肉类和棉花。需要牲畜来填充牧场。土壤肥力影响牧场可以容纳的动物数量。与农场不同，每个工人生产的数量不受肥力影响。",
+   :is-production-room true,
+   :category {:name "牧场", :main-name "农业", :room-count 6},
+   :icon-path "sprites/buildings/PASTURE_ONX/icon.png",
+   :type-index 5,
+   :key "PASTURE_ONX",
+   :index 67,
+   :construction
+   {:uses-area true,
+    :must-be-indoors false,
+    :must-be-outdoors true,
+    :resources [{:resource-key "_WOOD", :area-cost 0.1}],
+    :stats-count 4},
+   :name "绵盘羊牧场",
+   :type "PASTURE",
+   :degrade-rate 0.0,
+   :has-bonus true,
+   :industries
+   [{:index 25,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MEAT", :rate-per-second 0.0012152777777777778}
+      {:resource-key "COTTON", :rate-per-second 0.003125}
+      {:resource-key "_LIVESTOCK",
+       :rate-per-second 1.5190972222222222E-4}]}]}
+  {:description
+   "猎人小屋在游戏早期是非常好的食物来源。这些猎人不会在你的城市中捕猎野生动物，而是每天早晨前往城市之外的荒野。将他们建在地图边缘附近是有益的。猎人的产量可能会有所不同，并且该地区最多只能容纳15名猎人。",
+   :is-production-room true,
+   :category {:name "其他", :main-name "农业", :room-count 1},
+   :icon-path "sprites/buildings/HUNTER_NORMAL/icon.png",
+   :type-index 0,
+   :key "HUNTER_NORMAL",
+   :index 68,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources [{:resource-key "FURNITURE", :area-cost 0.0}],
+    :stats-count 3},
+   :name "猎人小屋",
+   :type "HUNTER",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 26,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "MEAT", :rate-per-second 0.0038194444444444448}]}
+    {:index 27,
+     :ai-multiplier 1.0,
+     :inputs [],
+     :outputs
+     [{:resource-key "LEATHER",
+       :rate-per-second 0.0024305555555555556}]}]}
+  {:description "将谷物加工成面包的精炼厂。",
+   :is-production-room true,
+   :category {:name "精炼", :main-name "工业", :room-count 5},
+   :icon-path "sprites/buildings/REFINER_BAKERY/icon.png",
+   :type-index 0,
+   :key "REFINER_BAKERY",
+   :index 69,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 3},
+   :name "面包厂",
+   :type "REFINER",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 28,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "GRAIN", :rate-per-second 0.010416666666666666}
+      {:resource-key "_WOOD", :rate-per-second 0.001736111111111111}],
+     :outputs
+     [{:resource-key "BREAD", :rate-per-second 0.010416666666666666}]}
+    {:index 29,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "GRAIN", :rate-per-second 0.012152777777777778}
+      {:resource-key "COAL", :rate-per-second 8.680555555555555E-4}],
+     :outputs
+     [{:resource-key "BREAD",
+       :rate-per-second 0.012152777777777778}]}]}
+  {:description "将陶器、煤炭、谷物加工成酒水的精炼厂。升级后可以用水果代替谷物。",
+   :is-production-room true,
+   :category {:name "精炼", :main-name "工业", :room-count 5},
+   :icon-path "sprites/buildings/REFINER_BREWERY/icon.png",
+   :type-index 1,
+   :key "REFINER_BREWERY",
+   :index 70,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "POTTERY", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 3},
+   :name "酿酒厂",
+   :type "REFINER",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 30,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "GRAIN", :rate-per-second 0.003472222222222222}
+      {:resource-key "POTTERY", :rate-per-second 4.3402777777777775E-4}
+      {:resource-key "COAL", :rate-per-second 8.680555555555555E-4}],
+     :outputs
+     [{:resource-key "ALCO_BEER",
+       :rate-per-second 0.004340277777777778}]}
+    {:index 31,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FRUIT", :rate-per-second 0.003472222222222222}
+      {:resource-key "POTTERY", :rate-per-second 4.3402777777777775E-4}
+      {:resource-key "COAL", :rate-per-second 8.680555555555555E-4}],
+     :outputs
+     [{:resource-key "ALCO_WINE", :rate-per-second 0.00390625}]}]}
+  {:description "将木材加工成炭的精炼厂。",
+   :is-production-room true,
+   :category {:name "精炼", :main-name "工业", :room-count 5},
+   :icon-path "sprites/buildings/REFINER_COALER/icon.png",
+   :type-index 2,
+   :key "REFINER_COALER",
+   :index 71,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "CLAY", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 3},
+   :name "制炭厂",
+   :type "REFINER",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 32,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "COAL", :rate-per-second 0.010416666666666666}]}]}
+  {:description "将煤炭和矿石精炼成金属的精炼厂。",
+   :is-production-room true,
+   :category {:name "精炼", :main-name "工业", :room-count 5},
+   :icon-path "sprites/buildings/REFINER_SMELTER/icon.png",
+   :type-index 3,
+   :key "REFINER_SMELTER",
+   :index 72,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 3},
+   :name "冶金厂",
+   :type "REFINER",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 33,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.002170138888888889}
+      {:resource-key "ORE", :rate-per-second 0.002170138888888889}],
+     :outputs
+     [{:resource-key "METAL",
+       :rate-per-second 8.680555555555555E-4}]}]}
+  {:description "将纤维编织成布料的精炼厂。",
+   :is-production-room true,
+   :category {:name "精炼", :main-name "工业", :room-count 5},
+   :icon-path "sprites/buildings/REFINER_WEAVER/icon.png",
+   :type-index 4,
+   :key "REFINER_WEAVER",
+   :index 73,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "MACHINERY", :area-cost 0.0}],
+    :stats-count 3},
+   :name "纺织厂",
+   :type "REFINER",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 34,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COTTON", :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "FABRIC",
+       :rate-per-second 0.003472222222222222}]}]}
+  {:description "生产弓箭的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_BOWYER/icon.png",
+   :type-index 0,
+   :key "WORKSHOP_BOWYER",
+   :index 74,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "弓箭工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 35,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.006944444444444444}
+      {:resource-key "LEATHER",
+       :rate-per-second 0.001736111111111111}],
+     :outputs
+     [{:resource-key "BOW", :rate-per-second 6.944444444444445E-4}]}]}
+  {:description "用木头制造出家具的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_CARPENTER/icon.png",
+   :type-index 1,
+   :key "WORKSHOP_CARPENTER",
+   :index 75,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "家具工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 36,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "FURNITURE",
+       :rate-per-second 8.680555555555555E-4}]}
+    {:index 37,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.003472222222222222}
+      {:resource-key "_STONE", :rate-per-second 0.004340277777777778}],
+     :outputs
+     [{:resource-key "WEAPON_SPEAR",
+       :rate-per-second 8.680555555555555E-4}]}
+    {:index 38,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.001736111111111111}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}],
+     :outputs
+     [{:resource-key "WEAPON_SPEAR",
+       :rate-per-second 0.001736111111111111}]}
+    {:index 39,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.003472222222222222}
+      {:resource-key "_STONE", :rate-per-second 0.004340277777777778}],
+     :outputs
+     [{:resource-key "WEAPON_HAMMER",
+       :rate-per-second 4.3402777777777775E-4}]}
+    {:index 40,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.010416666666666666}
+      {:resource-key "LEATHER",
+       :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "WEAPON_SHIELD",
+       :rate-per-second 0.001736111111111111}]}]}
+  {:description "用金属和宝石锻造出珠宝的工坊。 生产速度非常慢，消耗大量资源。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_JEWELRY/icon.png",
+   :type-index 2,
+   :key "WORKSHOP_JEWELRY",
+   :index 76,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "STONE_CUT", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "珠宝工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 41,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "METAL", :rate-per-second 6.944444444444444E-5}
+      {:resource-key "GEM", :rate-per-second 1.7361111111111112E-4}],
+     :outputs
+     [{:resource-key "JEWELRY",
+       :rate-per-second 1.7361111111111112E-4}]}]}
+  {:description "将石头切割成石材的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_MASON/icon.png",
+   :type-index 3,
+   :key "WORKSHOP_MASON",
+   :index 77,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "石材工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 42,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_STONE", :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "STONE_CUT",
+       :rate-per-second 8.680555555555555E-4}]}]}
+  {:description "生产机械设备的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_MECHANIC/icon.png",
+   :type-index 4,
+   :key "WORKSHOP_MECHANIC",
+   :index 78,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "机械工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 43,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FURNITURE",
+       :rate-per-second 0.001736111111111111}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}],
+     :outputs
+     [{:resource-key "MACHINERY",
+       :rate-per-second 4.3402777777777775E-4}]}]}
+  {:description "用木头制造纸张的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_PAPER/icon.png",
+   :type-index 5,
+   :key "WORKSHOP_PAPER",
+   :index 79,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "造纸工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 44,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "_WOOD", :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "PAPER",
+       :rate-per-second 0.0013020833333333333}]}]}
+  {:description "用黏土制作陶器的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_POTTERY/icon.png",
+   :type-index 6,
+   :key "WORKSHOP_POTTERY",
+   :index 80,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "_WOOD", :area-cost 0.0}],
+    :stats-count 3},
+   :name "陶器工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 45,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "CLAY", :rate-per-second 0.001736111111111111}],
+     :outputs
+     [{:resource-key "POTTERY",
+       :rate-per-second 0.001736111111111111}]}]}
+  {:description
+   "将各类原材料食物制造为可供长期保存的口粮的工坊。口粮也被军队中的士兵用作食物补给。你的公民通常更喜欢烹饪各类生食，但一次歉收或瘟疫可能会引发大规模饥荒。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_RATION/icon.png",
+   :type-index 7,
+   :key "WORKSHOP_RATION",
+   :index 81,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "CLAY", :area-cost 0.0}
+     {:resource-key "POTTERY", :area-cost 0.0}],
+    :stats-count 3},
+   :name "口粮工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 46,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "BREAD", :rate-per-second 0.010416666666666666}],
+     :outputs
+     [{:resource-key "RATION", :rate-per-second 0.003472222222222222}]}
+    {:index 47,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "BREAD", :rate-per-second 0.005208333333333333}
+      {:resource-key "HERB", :rate-per-second 4.340277777777778E-5}],
+     :outputs
+     [{:resource-key "RATION", :rate-per-second 0.004340277777777778}]}
+    {:index 48,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "MEAT", :rate-per-second 0.005208333333333333}
+      {:resource-key "HERB", :rate-per-second 2.1701388888888888E-4}],
+     :outputs
+     [{:resource-key "RATION", :rate-per-second 0.005208333333333333}]}
+    {:index 49,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FISH", :rate-per-second 0.005208333333333333}
+      {:resource-key "HERB", :rate-per-second 2.1701388888888888E-4}],
+     :outputs
+     [{:resource-key "RATION", :rate-per-second 0.005208333333333333}]}
+    {:index 50,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FRUIT", :rate-per-second 0.005208333333333333}
+      {:resource-key "ALCO_WINE",
+       :rate-per-second 0.001736111111111111}],
+     :outputs
+     [{:resource-key "RATION", :rate-per-second 0.005208333333333333}]}
+    {:index 51,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "VEGETABLE",
+       :rate-per-second 0.005208333333333333}
+      {:resource-key "ALCO_WINE",
+       :rate-per-second 0.001736111111111111}],
+     :outputs
+     [{:resource-key "RATION",
+       :rate-per-second 0.005208333333333333}]}]}
+  {:description "用煤炭和金属锻造工具、武器或金属盔甲的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_SMITHY/icon.png",
+   :type-index 8,
+   :key "WORKSHOP_SMITHY",
+   :index 82,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "锻造工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 52,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.003472222222222222}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}],
+     :outputs
+     [{:resource-key "TOOL", :rate-per-second 0.003472222222222222}]}
+    {:index 53,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.003472222222222222}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}],
+     :outputs
+     [{:resource-key "ARMOUR_PLATE",
+       :rate-per-second 2.6041666666666666E-4}]}
+    {:index 54,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.003472222222222222}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}],
+     :outputs
+     [{:resource-key "WEAPON_SHORT",
+       :rate-per-second 8.680555555555555E-4}]}
+    {:index 55,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.003472222222222222}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}],
+     :outputs
+     [{:resource-key "WEAPON_SLASH",
+       :rate-per-second 4.3402777777777775E-4}]}
+    {:index 56,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.001736111111111111}
+      {:resource-key "METAL", :rate-per-second 6.944444444444445E-4}
+      {:resource-key "_WOOD", :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "WEAPON_HAMMER",
+       :rate-per-second 8.680555555555555E-4}]}]}
+  {:description "用布料或者皮革缝制衣服的工坊。",
+   :is-production-room true,
+   :category {:name "制造", :main-name "工业", :room-count 10},
+   :icon-path "sprites/buildings/WORKSHOP_TAILOR/icon.png",
+   :type-index 9,
+   :key "WORKSHOP_TAILOR",
+   :index 83,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "缝纫工坊",
+   :type "WORKSHOP",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 57,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "LEATHER",
+       :rate-per-second 0.006944444444444444}],
+     :outputs
+     [{:resource-key "CLOTHES",
+       :rate-per-second 0.005208333333333333}]}
+    {:index 58,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FABRIC", :rate-per-second 0.006944444444444444}],
+     :outputs
+     [{:resource-key "CLOTHES",
+       :rate-per-second 0.005208333333333333}]}
+    {:index 59,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "LEATHER",
+       :rate-per-second 0.003472222222222222}],
+     :outputs
+     [{:resource-key "ARMOUR_LEATHER",
+       :rate-per-second 4.3402777777777775E-4}]}]}
+  {:description
+   "餐厅是高档优雅的用餐场所，它们提供更美味的食物，并提供座位和社交场所。它们需要香草来运作，并且餐食的生产速度较慢。",
+   :is-production-room true,
+   :category {:name "分配", :main-name "服务", :room-count 4},
+   :icon-path "sprites/buildings/CANTEEN_NORMAL/icon.png",
+   :type-index 0,
+   :key "CANTEEN_NORMAL",
+   :index 98,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "POTTERY", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 3},
+   :name "餐厅",
+   :type "CANTEEN",
+   :degrade-rate 0.75,
+   :has-bonus false,
+   :industries
+   [{:index 60,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "HERB", :rate-per-second 0.001736111111111111}],
+     :outputs []}]}
+  {:description "供臣民清洁，放松自己的地方.",
+   :is-production-room true,
+   :category {:name "健康", :main-name "服务", :room-count 8},
+   :icon-path "sprites/buildings/BATH_NORMAL/icon.png",
+   :type-index 0,
+   :key "BATH_NORMAL",
+   :index 101,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_STONE", :area-cost 0.0}
+     {:resource-key "STONE_CUT", :area-cost 0.0}
+     {:resource-key "METAL", :area-cost 0.0}],
+    :stats-count 2},
+   :name "浴场",
+   :type "BATH",
+   :degrade-rate 0.75,
+   :has-bonus false,
+   :industries
+   [{:index 62,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "COAL", :rate-per-second 0.0026041666666666665}],
+     :outputs []}]}
+  {:description "小学用来提高孩子们的教育水平。灌输的倍率是列出值的5倍。小学需要纸张和受雇的教师来运作。",
+   :is-production-room true,
+   :category {:name "管理", :main-name "政府", :room-count 7},
+   :icon-path "sprites/buildings/SCHOOL_NORMAL/icon.png",
+   :type-index 0,
+   :key "SCHOOL_NORMAL",
+   :index 110,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "PAPER", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 2},
+   :name "小学",
+   :type "SCHOOL",
+   :degrade-rate 0.75,
+   :has-bonus false,
+   :industries
+   [{:index 63,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "PAPER", :rate-per-second 4.3402777777777775E-4}],
+     :outputs []}]}
+  {:description "文书官可以提升整个城市的各方面。提升的幅度与你拥有的文书官数量以及人口有关。",
+   :is-production-room true,
+   :category {:name "管理", :main-name "政府", :room-count 7},
+   :icon-path "sprites/buildings/ADMIN_NORMAL/icon.png",
+   :type-index 0,
+   :key "ADMIN_NORMAL",
+   :index 113,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 3},
+   :name "管理办公室",
+   :type "ADMIN",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 64,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "PAPER", :rate-per-second 0.003472222222222222}],
+     :outputs []}]}
+  {:description "阿美伟亚婴儿出生和成长的地方。每个站点都能养育一个婴儿。需要鱼才能运作，否则婴儿会挨饿。",
+   :is-production-room true,
+   :category {:name "生育", :main-name "政府", :room-count 5},
+   :icon-path "sprites/buildings/NURSERY_AMEVIA/icon.png",
+   :type-index 0,
+   :key "NURSERY_AMEVIA",
+   :index 114,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 3},
+   :name "阿美伟亚人孵化场",
+   :type "NURSERY",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 65,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FISH", :rate-per-second 8.680555555555555E-4}],
+     :outputs []}]}
+  {:description "克里托尼亚婴儿出生和成长的地方。每个站点都能养育一个婴儿。需要蔬菜才能运作，否则婴儿会挨饿。",
+   :is-production-room true,
+   :category {:name "生育", :main-name "政府", :room-count 5},
+   :icon-path "sprites/buildings/NURSERY_CRETONIAN/icon.png",
+   :type-index 1,
+   :key "NURSERY_CRETONIAN",
+   :index 115,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 3},
+   :name "克里托尼亚人饲养所",
+   :type "NURSERY",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 66,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "VEGETABLE",
+       :rate-per-second 8.680555555555555E-4}],
+     :outputs []}]}
+  {:description
+   "孵化贾尔蒂米人的场所。每个站点每20天生产一个，每个站点每天需要1块肉才能运行，否则茧会死。除了贾尔蒂米自己，其他所有种族都不太能受得了这里的环境。",
+   :is-production-room true,
+   :category {:name "生育", :main-name "政府", :room-count 5},
+   :icon-path "sprites/buildings/NURSERY_GARTHIMI/icon.png",
+   :type-index 2,
+   :key "NURSERY_GARTHIMI",
+   :index 116,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "MEAT", :area-cost 0.0}
+     {:resource-key "CLAY", :area-cost 0.0}
+     {:resource-key "_STONE", :area-cost 0.0}],
+    :stats-count 3},
+   :name "贾尔蒂米人孵化场",
+   :type "NURSERY",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 67,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "MEAT", :rate-per-second 8.680555555555555E-4}],
+     :outputs []}]}
+  {:description "人类婴儿出生和成长的地方。每个站点都能养育一个婴儿。需要水果才能运作，否则婴儿会挨饿。",
+   :is-production-room true,
+   :category {:name "生育", :main-name "政府", :room-count 5},
+   :icon-path "sprites/buildings/NURSERY_HUMAN/icon.png",
+   :type-index 3,
+   :key "NURSERY_HUMAN",
+   :index 117,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 3},
+   :name "人类育儿所",
+   :type "NURSERY",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 68,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FRUIT", :rate-per-second 8.680555555555555E-4}],
+     :outputs []}]}
+  {:description "蒂拉皮婴儿出生和成长的地方。每个站点都能养育一个婴儿。需要水果才能运作，否则婴儿会挨饿。",
+   :is-production-room true,
+   :category {:name "生育", :main-name "政府", :room-count 5},
+   :icon-path "sprites/buildings/NURSERY_TILAPI/icon.png",
+   :type-index 4,
+   :key "NURSERY_TILAPI",
+   :index 118,
+   :construction
+   {:uses-area true,
+    :must-be-indoors true,
+    :must-be-outdoors false,
+    :resources
+    [{:resource-key "_WOOD", :area-cost 0.0}
+     {:resource-key "FURNITURE", :area-cost 0.0}
+     {:resource-key "FABRIC", :area-cost 0.0}],
+    :stats-count 3},
+   :name "蒂拉皮人育儿所",
+   :type "NURSERY",
+   :degrade-rate 0.75,
+   :has-bonus true,
+   :industries
+   [{:index 69,
+     :ai-multiplier 1.0,
+     :inputs
+     [{:resource-key "FRUIT", :rate-per-second 8.680555555555555E-4}],
+     :outputs []}]}]}

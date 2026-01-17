@@ -1,0 +1,534 @@
+{:needs
+ {:count 17,
+  :needs
+  [{:key "ARENA", :index 0, :name "战斗", :basic false, :event 10.0}
+   {:key "ARENAG", :index 1, :name "竞技场", :basic false, :event 20.0}
+   {:key "BATH", :index 2, :name "泡澡", :basic false, :event 0.0}
+   {:key "CONSTIPATION",
+    :index 3,
+    :name "如厕",
+    :basic false,
+    :event 0.0}
+   {:key "DOCTOR", :index 4, :name "体检", :basic false, :event 0.0}
+   {:key "GROOMING", :index 5, :name "梳洗打扮", :basic false, :event 0.0}
+   {:key "HEARTH", :index 6, :name "社交", :basic false, :event 0.0}
+   {:key "MASSAGE", :index 7, :name "“按摩”", :basic false, :event 0.0}
+   {:key "SPEAKER", :index 8, :name "新闻", :basic false, :event 10.0}
+   {:key "STAGE", :index 9, :name "看戏剧", :basic false, :event 10.0}
+   {:key "WELL", :index 10, :name "水井", :basic false, :event 0.0}
+   {:key "_HUNGER", :index 11, :name "食物", :basic true, :event 0.0}
+   {:key "_THIRST", :index 12, :name "酒水", :basic true, :event 0.0}
+   {:key "_SHOPPING", :index 13, :name "购物", :basic true, :event 0.0}
+   {:key "_SKINNYDIP", :index 14, :name "游泳", :basic false, :event 0.0}
+   {:key "_TEMPLE",
+    :index 15,
+    :name "崇拜（神庙）",
+    :basic false,
+    :event 0.0}
+   {:key "_SHRINE",
+    :index 16,
+    :name "朝拜（神坛）",
+    :basic false,
+    :event 0.0}],
+  :basic-needs ["_HUNGER" "_THIRST" "_SHOPPING"]},
+ :htypes
+ {:count 13,
+  :htypes
+  [{:description "公民是你们人口的主体，他们会按照你的要求行事。",
+    :class-key "CITIZEN",
+    :key "CITIZEN",
+    :index 0,
+    :name "公民",
+    :hostile false,
+    :works true,
+    :player true,
+    :visible true,
+    :names "公民"}
+   {:description "退休人员是为您服务多年的公民，现在他们在享受轻松的晚年，不再工作。",
+    :class-key "CITIZEN",
+    :key "RETIREE",
+    :index 1,
+    :name "退休人员",
+    :hostile false,
+    :works false,
+    :player true,
+    :visible true,
+    :names "退休人员"}
+   {:description "新兵是公民，他们要么为征兵入伍训练，要么在达到兵团设定的上限前继续打磨战斗技能。",
+    :class-key "CITIZEN",
+    :key "RECRUIT",
+    :index 2,
+    :name "新兵",
+    :hostile false,
+    :works false,
+    :player true,
+    :visible true,
+    :names "新兵"}
+   {:description "学生是正在上大学的公民，他们不算你的劳动力。",
+    :class-key "CITIZEN",
+    :key "STUDENT",
+    :index 3,
+    :name "学生",
+    :hostile false,
+    :works false,
+    :player true,
+    :visible true,
+    :names "学生"}
+   {:description
+    "被抓住的罪犯和战俘都算作囚犯。囚犯将被扔进你的地牢里。它们可以被用作特定神庙的活祭品，也可以被奴役成为奴隶，或者被处死。",
+    :class-key "OTHER",
+    :key "PRISONER",
+    :index 4,
+    :name "囚犯",
+    :hostile false,
+    :works false,
+    :player false,
+    :visible false,
+    :names "囚犯"}
+   {:description "游客是访问您的城市来寻找奇观的外国人。 善待他们，他们会给你一些费用来表达他们的感激之情。",
+    :class-key "OTHER",
+    :key "TOURIST",
+    :index 5,
+    :name "游客",
+    :hostile false,
+    :works false,
+    :player false,
+    :visible false,
+    :names "游客"}
+   {:description "士兵是战场上的人。",
+    :class-key "CITIZEN",
+    :key "SOLDIER",
+    :index 6,
+    :name "士兵",
+    :hostile false,
+    :works false,
+    :player true,
+    :visible false,
+    :names "士兵"}
+   {:description "敌人是反对你的人，一心要破坏你的统治",
+    :class-key "OTHER",
+    :key "ENEMY",
+    :index 7,
+    :name "敌人",
+    :hostile true,
+    :works false,
+    :player false,
+    :visible false,
+    :names "敌人"}
+   {:description "暴徒曾经是公民，他们已经受够了你的统治，想要将你的城市烧成灰烬来表达他们的失望。",
+    :class-key "OTHER",
+    :key "RIOTER",
+    :index 8,
+    :name "暴徒",
+    :hostile true,
+    :works false,
+    :player false,
+    :visible false,
+    :names "暴徒"}
+   {:description
+    "精神错乱者是指已经发疯的人。他们不会做任何工作，在你的城市周围徘徊，做一些古怪的事情。可以在精神病院治愈。",
+    :class-key "OTHER",
+    :key "DERANGED",
+    :index 9,
+    :name "精神错乱者",
+    :hostile false,
+    :works false,
+    :player false,
+    :visible false,
+    :names "精神错乱者"}
+   {:description "贵族地位高于平民。不以传统的方式工作，需要最好的服务。",
+    :class-key "NOBLE",
+    :key "NOBILITY",
+    :index 10,
+    :name "贵族",
+    :hostile false,
+    :works false,
+    :player true,
+    :visible true,
+    :names "贵族"}
+   {:description
+    "奴隶从事平凡而艰苦的工作，但需要的回报很少。他们不能被训练成士兵，或接受教育，或繁衍，但可以从俘虏中获得。如果你虐待奴隶，他们可能会反抗。",
+    :class-key "SLAVE",
+    :key "SLAVE",
+    :index 11,
+    :name "奴隶",
+    :hostile false,
+    :works true,
+    :player true,
+    :visible true,
+    :names "奴隶"}
+   {:description "孩子们需要配备人员的托儿所才能长大成为人口。 孩子可以在小学接受教育。",
+    :class-key "CHILD",
+    :key "CHILD",
+    :index 12,
+    :name "儿童",
+    :hostile false,
+    :works false,
+    :player true,
+    :visible true,
+    :names "儿童"}],
+  :player-types
+  ["CITIZEN"
+   "RETIREE"
+   "RECRUIT"
+   "STUDENT"
+   "SOLDIER"
+   "NOBILITY"
+   "SLAVE"
+   "CHILD"],
+  :worker-types ["CITIZEN" "SLAVE"],
+  :hostile-types ["ENEMY" "RIOTER"]},
+ :summary
+ {:terrains 5,
+  :climates 3,
+  :diseases 6,
+  :traits 12,
+  :needs 17,
+  :hclasses 5,
+  :htypes 13},
+ :extracted-at "2026-01-17T05:55:01.877296800Z",
+ :diseases
+ {:count 6,
+  :regular-interval-days 64.0,
+  :diseases
+  [{:description
+    "出血热是一种极度致命的疾病，从创世以来就相伴于世界。它极其罕见，多次都被人们认为已经绝迹。被这种极度痛苦所折磨的患者会出现导致谵妄的高烧，皮肤也会变得越来越干燥和脆弱，哪怕最轻柔的抚摸也会使得皮肤撕裂。仅仅在床上翻身都有可能导致恐怖的死相。",
+    :fatality-rate 0.5,
+    :infect-rate 0.4,
+    :incubation-days 4.0,
+    :regular false,
+    :epidemic true,
+    :key "BLEEDING_FEVER",
+    :index 0,
+    :name "出血热",
+    :length 3}
+   {:description
+    "残酷的黑死疫是致命的，其通常会在结束患者生命之前折磨他们数日。这种疾病会使感染者全身长出疼痛的脓包，迅速耗尽他们的体力，并常常导致死亡。",
+    :fatality-rate 0.3,
+    :infect-rate 0.6,
+    :incubation-days 3.0,
+    :regular false,
+    :epidemic true,
+    :key "PLAGUE",
+    :index 1,
+    :name "黑死疫",
+    :length 3}
+   {:description
+    "这种流行病不仅得名因经常出现于靠近河流的城镇，而且可能会非常致命。患者可能会在数日腹泻后死于脱水，或者希望自己已经死了。",
+    :fatality-rate 0.15,
+    :infect-rate 0.9,
+    :incubation-days 1.0,
+    :regular false,
+    :epidemic true,
+    :key "RIVER_RUNS",
+    :index 2,
+    :name "泄河痢",
+    :length 2}
+   {:description
+    "这种疾病与其名字相悖，并不是在沼泽中感染的。虽然在感染初期仅是轻微的咳嗽，但由于肺部不断地积液，呼吸会变得愈发困难。患者在临终试图呼吸时发出的声音与拔出一只陷入沼泽中的靴子时发出的声音极度相似，由此得名。",
+    :fatality-rate 0.2,
+    :infect-rate 0.7,
+    :incubation-days 6.0,
+    :regular false,
+    :epidemic true,
+    :key "SWAMP_LUNG",
+    :index 3,
+    :name "沼肺痨",
+    :length 4}
+   {:description
+    "这种极少致命的疾病会使患者发烧并产生可怕的幻觉。由于患者大多会胡言乱语，幻觉的内容尚不清楚，但那些还剩下足够的力气来移动的患者会寻找神坛和神庙并与他们的神交流。也许幸运的是，治愈后没有人记得任何事情。",
+    :fatality-rate 0.05,
+    :infect-rate 0.1,
+    :incubation-days 3.0,
+    :regular true,
+    :epidemic false,
+    :key "VISION_FEVER",
+    :index 4,
+    :name "幻视热",
+    :length 8}
+   {:description
+    "白萤症的患者会发高烧并出现谵妄。这种疾病因那些弥漫于希克斯的移动光带而命名，通常会在疾病持续期间使患者失明。它极少致命。",
+    :fatality-rate 0.01,
+    :infect-rate 0.15,
+    :incubation-days 3.0,
+    :regular true,
+    :epidemic false,
+    :key "WHITE_SHIMMER",
+    :index 5,
+    :name "白萤症",
+    :length 2}],
+  :epidemic-diseases
+  ["BLEEDING_FEVER" "PLAGUE" "RIVER_RUNS" "SWAMP_LUNG"],
+  :regular-diseases ["VISION_FEVER" "WHITE_SHIMMER"]},
+ :version "1.0",
+ :climates
+ {:count 3,
+  :climates
+  [{:key "COLD",
+    :index 0,
+    :name "寒冷",
+    :description "寒冬。 独特作物。低疾病率。",
+    :season-change 1.0,
+    :temp-cold 0.32,
+    :temp-warm 0.655,
+    :fertility 0.65}
+   {:key "TEMPERATE",
+    :index 1,
+    :name "温暖",
+    :description "多变的气温。",
+    :season-change 0.5,
+    :temp-cold 0.425,
+    :temp-warm 0.75,
+    :fertility 0.45}
+   {:key "HOT",
+    :index 2,
+    :name "炎热",
+    :description "酷暑",
+    :season-change 0.0,
+    :temp-cold 0.65,
+    :temp-warm 0.825,
+    :fertility 0.65}]},
+ :terrains
+ {:count 5,
+  :terrains
+  [{:key "OCEAN",
+    :index 0,
+    :name "海洋",
+    :description "咸水，如海洋。鱼类丰富。",
+    :world true}
+   {:key "WET",
+    :index 1,
+    :name "淡水",
+    :description "淡水，如河流或湖泊。提供天然灌溉、黏土矿床和些许鱼类。",
+    :world true}
+   {:key "MOUNTAIN",
+    :index 2,
+    :name "山地",
+    :description "大量的洞穴和丰富的矿藏。",
+    :world true}
+   {:key "FOREST",
+    :index 3,
+    :name "森林",
+    :description "森林地区。适合伐木。",
+    :world true}
+   {:key "NONE",
+    :index 4,
+    :name "旷野",
+    :description "可以自由漫游的开阔土地。",
+    :world true}]},
+ :hclasses
+ {:count 5,
+  :hclasses
+  [{:key "NOBLE",
+    :index 0,
+    :name "贵族",
+    :names "贵族",
+    :description
+    "贵族是你王国内社会阶级的顶层。他们不会进行传统的工作，但会要求薪资和高等级的服务。然而拥有贵族能够带来巨大的回报。",
+    :player true,
+    :player-index 0}
+   {:key "CITIZEN",
+    :index 1,
+    :name "平民",
+    :names "平民",
+    :description "平民是人口的主体，他们会按你的要求行事。",
+    :player true,
+    :player-index 1}
+   {:key "SLAVE",
+    :index 2,
+    :name "奴隶",
+    :names "奴隶",
+    :description
+    "奴隶从事平凡而艰苦的工作，但需要的回报很少。他们不能被训练成士兵，或接受教育，或繁衍，但可以通过处理你的战俘而获得。如果你虐待奴隶，他们可能会反抗。",
+    :player true,
+    :player-index 2}
+   {:key "CHILD",
+    :index 3,
+    :name "儿童",
+    :names "儿童",
+    :description "儿童是未来的公民。他们需要育儿所提供食物和保护，并可在小学接受教育。他们有时会到处乱跑，制造麻烦。",
+    :player true,
+    :player-index 3}
+   {:key "OTHER",
+    :index 4,
+    :name "Other",
+    :names "Others",
+    :description "",
+    :player false,
+    :player-index -1}],
+  :player-classes ["NOBLE" "CITIZEN" "SLAVE" "CHILD"]},
+ :traits
+ {:count 12,
+  :traits
+  [{:key "COMPETENT",
+    :index 0,
+    :name "野心勃勃",
+    :description "在大多数任务上表现得更好",
+    :title "大帝",
+    :bios
+    ["{NAME}想的很多，看的很远。"
+     "宣称作为一名{TITLE}只是暂时的，并渴望以更荣耀的方式来服侍大人您。"
+     "{HEC}以令人印象深刻的勤勉和专注执行{HIS}任务。"
+     "{NAME}是一位出奇高产能的{RACE}，且其并不仅仅满足于吃饱穿暖。"
+     "{HEC}以令人印象深刻的勤勉和专注执行{HIS}任务。"
+     "{NAME}的散漫态度可不会延续到{HIS}工作中，{HE}也不会让任何事妨碍了他的工作状态。"
+     "{HEC}以令人印象深刻的勤勉和专注执行{HIS}任务。"
+     "{NAME}极力追求将其技能推进新高度。"
+     "{HEC}致力于在其选定的领域中磨练技艺至炉火纯青。"],
+    :disables ["LAZY"]}
+   {:key "CONSERVATIVE",
+    :index 1,
+    :name "保守",
+    :description "喜欢事物维持原样。重视自己的种族，对异族则漠不关心。对种族屠杀有所支持。",
+    :title "传统捍卫者",
+    :bios
+    ["{HEC}矢志不渝的相信，{RACES}就该是{RACIAN}，就应该做{RACES}该做的事。绝不会与其他种族混居。"
+     "{HIM}从未在{HIS}内心中关心过与其没有共同点的人的困境。"
+     "{NAME}坚信{RACES}应该凌驾于其他种族之上。"
+     "{HEC}无比坚信与其他种族混居只会损害到{RACES}。"
+     "{HEC}强烈的相信与{RACE_OTHERS}混居只会破坏{RACIAN}大业。"
+     "{NAME}并不关心希克斯的其他种族。{HE}认为他们要么应该立刻灭绝，要么就为希克斯贡献更多。"],
+    :disables ["TOLERANT"]}
+   {:key "CRUEL",
+    :index 2,
+    :name "残忍",
+    :description "统治应在恐惧下强制推行，而反对意见应该被无情地摧毁。",
+    :title "无情者",
+    :bios
+    ["{HEC}喜欢从附近的育儿所的孩童手中抢糖吃。"
+     "{NAME}不打算共情不与{HIS}目的一致的人。"
+     "一旦有机会，{HEC}会表现出相当残忍的一面。"
+     "认为{HIS}的同族的善良的一面是一种软弱。"
+     "是个异常残忍的{RACIAN}样例。"],
+    :disables ["MERCIFUL"]}
+   {:key "CUNNING",
+    :index 3,
+    :name "狡猾",
+    :description "对荣誉有务实的态度，在制定计划和决策时不会受到道德顾虑的阻碍。",
+    :title "诡诈者",
+    :bios
+    ["其朋友，{FRIEND_NAME}，称{NAME}永远借钱不还。"
+     "{HEC}用卑鄙手段达到目的时并不感到羞耻。"
+     "{NAME}更加重视结果，而非手段。"
+     "所有人都知道{NAME}手段肮脏，在大街上都离{HIM}远远的。"
+     "在{RACE}中算狡猾的。"
+     "从不对其朋友说{HE}真实的意见。"
+     "经常谋求哪怕是最小的利益。"
+     "{HE}不在工作时是不可信任的。"
+     "{NAME}更加重视结果，而非手段。"
+     "{HE}会在倾听他人倾诉后转头就散播出去。"],
+    :disables ["HONEST"]}
+   {:key "HONEST",
+    :index 4,
+    :name "正直",
+    :description "刚正不阿，恪守诺言。",
+    :title "荣耀捍卫者",
+    :bios
+    ["被其他人描述为总是言行合一。"
+     "{HEC}总是坚守诺言，问心无愧。"
+     "{NAME}的朋友{FRIEND_NAME}因为{HIS}可靠的性格，而对其产生了依赖。"
+     "从未违背{HIS}诺言。"
+     "即使{HIM}身处险境中，{HEC}也绝不会背弃{HIS}誓言。"
+     "认为生命中最重要的是荣誉。"],
+    :disables ["CUNNING"]}
+   {:key "LAZY",
+    :index 5,
+    :name "懒惰",
+    :description "性格开朗、友善，不过做不了重要的工作",
+    :title "狂欢者",
+    :bios
+    ["经常在{HIS}班次中开小差而被监工逮到。"
+     "常常做白日梦而不是埋头工作。"
+     "只要{HE}能开小差，{NAME}就不会去工作。"
+     "一直觉得{RND_PROFESSION}会是一份相当轻松的工作。"
+     "每晚懒散的躺着，梦想着一份更轻松的工作。"
+     "以一有机会就会赖在某个地方而闻名。被禁止使用你城市中大部分的长榻。"
+     "经常忘记给{HIS}室内绿植浇水，并将枯死的结果归咎于土地上的邪灵。"
+     "工作时犹如在度过{HIS}私生活一样悠闲。"
+     "常常做白日梦而不是埋头工作。"
+     "与其他{RACES}相比{HEC}有点懒。"
+     "“好事多磨”是{HE}偷懒时{HE}告诉自己的话。"
+     "正在设法掌握看着很忙而不干实事的能力。"
+     "被{HIS}背后的{RACES}同胞们叫做“懒鬼”。其认为他们没准是对的，但还不想花力气深入思考这件事。"],
+    :disables ["COMPETENT"]}
+   {:key "MERCIFUL",
+    :index 6,
+    :name "仁慈",
+    :description "一些人称其为软弱，但其他人称其为骑士精神。珍视生命并尽可能地保存生命。",
+    :title "慈悲者",
+    :bios
+    ["曾经把一只不幸被运输马车压过的恐鸟幼崽带回了家，尝试将它护理直至康复，但很不幸的是幼崽最后还是死了。{NAME}自此之后变得不一样了。"
+     "一旦干完了自己的本分工作，其就为{HIS}年老的邻居自愿打扫和烹饪，并从未要求回报。"
+     "曾在{HIS}住所中设立救助站来保护受伤的动物，直到某个贾尔蒂米人闯入并把它们全吃了。"
+     "认为如果罪犯诚心悔过，就该给他们另一次机会。"
+     "认为生命是来自阿斯塔利的礼物，把它从别人那夺走是一种莫大的罪过。"
+     "在住所里藏有一套完整的被烧死的传教士的寓言集，并遵循他的哲学。"],
+    :disables ["CRUEL"]}
+   {:key "MODEST",
+    :index 7,
+    :name "谦逊",
+    :description "不太在乎礼物或怠慢。",
+    :title "谦逊者",
+    :bios
+    ["当邻居们都在自豪的炫耀他们的装潢，穿着华丽的衣服走来走去时，{NAME}从未自夸或炫耀。"
+     "{NAME}不太关心他人的看法。"
+     "逻辑，而非个人偏好指引着{NAME}的行动。"
+     "{NAME}的幸福并不被他人的看法所影响，{HE}从生命中其他更简单的事物中得到快乐。"
+     "并不想夸耀自己来吸引他人的注意，也很少能察觉到他人的恭维。"
+     "{NAME}从未夸耀其功绩，更倾向于保持{HIMSELF}本心。"],
+    :disables ["PROUD"]}
+   {:key "PROUD",
+    :index 8,
+    :name "骄傲",
+    :description "谄媚和冒犯能轻易将其挑动。",
+    :title "高傲者",
+    :bios
+    ["经常故意炫耀以得到称赞来满足{HIS}虚荣的自我。"
+     "其朋友{FRIEND_NAME}经常会利用{NAME}的自傲，只要让其相信有什么会让其看起来更棒。"
+     "{HEC}很记仇，总是为小事耿耿于怀。"
+     "与寻常的{RACE}相比，其相当喜欢自夸自擂。"
+     "{HEC}将每一个{HE}收到过的赞誉视若珍宝，但是对任何侮辱都耿耿于怀。"
+     "将会对愿意听其说话的人一件件炫耀自己拥有的技能。"
+     "对其个人财富深感自豪。"],
+    :disables ["MODEST"]}
+   {:key "TOLERANT",
+    :index 9,
+    :name "宽容",
+    :description "相信多样性和世界上所有种族的平等价值。",
+    :title "伟大的人道主义者.",
+    :bios
+    ["认为你的城市中的绝大多数人都是种族主义者。幻想一个人人平等的世界。认为你应该分配不同性别和种族的贵族以此来传播这一理念。"
+     "{HEC}已经厌倦了种族之间的无尽的流血冲突，并愿意做出让步来终结。"
+     "{NAME}认为每个人都独一无二，并坚信没有人会被本性完全束缚。"
+     "喜欢有更多来自其他种族的朋友。"
+     "{NAME}认为每个人都独一无二，并坚信没有人会被本性完全束缚。"
+     "{HEC}已经厌倦了种族之间的无尽的流血冲突，并愿意做出努力来使得这种事不再发生。"
+     "被{HATED_RACE}精巧技艺的模范所深深吸引。"
+     "希望从其他种族那里学到知识来充实自己。"
+     "对非{RACE}的行事方式感到着迷，同时也对他们有着好感。"
+     "坚信所有人都能在希克斯上自由生活。"],
+    :disables ["CONSERVATIVE"]}
+   {:key "WARRIOR",
+    :index 10,
+    :name "好战",
+    :description "一个追求荣耀的人，他会急切地寻找或制造冲突以获得战斗的机会。",
+    :title "征服者",
+    :bios
+    ["想要在战场上赢取荣耀。“给我一把剑吧{RACE_LORD}，我会为你的名字带来荣誉和辉煌。”"
+     "{HIS}童年时光大多在扮演士兵，用木棒打架。"
+     "{HEC}认为{HE}就是当兵的料，并宣称{HE}能历经百战而生还。"
+     "{NAME}喜欢公开冲突的直截了当。"
+     "全身心投入于精通战斗技能。"
+     "有些时候会在房子外边脱掉{HIS}上衣并练习拳击。有些时候{HE}还会有些观众。"],
+    :disables ["WARRIOR_NOT"]}
+   {:key "WARRIOR_NOT",
+    :index 11,
+    :name "和平主义者",
+    :description "厌恶战争",
+    :title "和平使者",
+    :bios
+    ["当其他孩童玩打架游戏时，这个人经常躲在床底下。"
+     "比起战斗更倾向于逃跑。"
+     "当境况转变为直接的对抗时，{NAME}通常会开始逃避。"
+     "认为肢体冲突是“不{RACE}的”，并在可能发生冲突时克制这么做。"],
+    :disables ["WARRIOR"]}]}}

@@ -1,0 +1,67 @@
+{:version "1.0",
+ :extracted-at "2026-01-17T05:49:38.047931600Z",
+ :summary
+ {:total-religions 4,
+  :religions-by-inclination
+  [{:key "AMINION", :inclination 1.0}
+   {:key "ATHURI", :inclination 1.0}
+   {:key "CRATOR", :inclination 1.0}
+   {:key "SHMALOR", :inclination 1.0}]},
+ :religions
+ [{:description "混沌之王阿明农，能提高奴隶的顺从度。他接受活人祭品（囚犯）。",
+   :icon-path "sprites/religions/AMINION/icon.png",
+   :boosts
+   [{:boostable-key "WORLD_CONSCRIPTABLE_TARGET",
+     :boostable-name "征召兵",
+     :is-mul true,
+     :from 1.0,
+     :to 1.1}
+    {:boostable-key "WORLD_LOYALTY_HUMAN",
+     :boostable-name "忠诚度: 人类",
+     :is-mul true,
+     :from 1.0,
+     :to 1.05}
+    {:boostable-key "WORLD_LOYALTY_CRETONIAN",
+     :boostable-name "忠诚度: 克里托尼亚人",
+     :is-mul true,
+     :from 1.0,
+     :to 1.05}
+    {:boostable-key "WORLD_LOYALTY_TILAPI",
+     :boostable-name "忠诚度: 蒂拉皮人",
+     :is-mul true,
+     :from 1.0,
+     :to 1.05}
+    {:boostable-key "WORLD_LOYALTY_GARTHIMI",
+     :boostable-name "忠诚度: 贾尔蒂米人",
+     :is-mul true,
+     :from 1.0,
+     :to 1.05}
+    {:boostable-key "WORLD_LOYALTY_DONDORIAN",
+     :boostable-name "忠诚度: 邓多里安人",
+     :is-mul true,
+     :from 1.0,
+     :to 1.05}
+    {:boostable-key "WORLD_LOYALTY_Q_AMEVIA",
+     :boostable-name "忠诚度: 阿美伟亚人",
+     :is-mul true,
+     :from 1.0,
+     :to 1.05}
+    {:boostable-key "BEHAVIOUR_SUBMISSION",
+     :boostable-name "服从度",
+     :is-mul true,
+     :from 1.0,
+     :to 1.2}],
+   :color {:red 45, :green 5, :blue 5, :hex "#05052D"},
+   :key "AMINION",
+   :index 0,
+   :name "阿明农教派",
+   :deity "阿明农",
+   :oppositions
+   {"AMINION" 0.0, "ATHURI" 4.0, "CRATOR" 0.0, "SHMALOR" 0.0},
+   :inclination 1.0}],
+ :opposition-matrix
+ {"AMINION" {"AMINION" 0.0, "ATHURI" 4.0, "CRATOR" 0.0, "SHMALOR" 0.0},
+  "ATHURI" {"AMINION" 4.0, "ATHURI" 0.0, "CRATOR" 0.0, "SHMALOR" 4.0},
+  "CRATOR" {"AMINION" 1.0, "ATHURI" 0.0, "CRATOR" 0.0, "SHMALOR" 1.0},
+  "SHMALOR"
+  {"AMINION" 0.0, "ATHURI" 4.0, "CRATOR" 0.0, "SHMALOR" 0.0}}}

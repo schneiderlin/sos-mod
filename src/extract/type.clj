@@ -282,6 +282,10 @@
    (extract-types-edn (str output-dir "/data"))
    (println "Done!")))
 
+(comment
+  (extract-all)
+  :rcf)
+
 ;; ============================================
 ;; Individual Type Queries
 ;; ============================================

@@ -203,6 +203,10 @@
    (extract-production-edn (str output-dir "/data"))
    (println "Done!")))
 
+(comment
+  (extract-all)
+  :rcf)
+
 ;; ============================================
 ;; Individual Queries
 ;; ============================================

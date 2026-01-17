@@ -60,10 +60,10 @@
   {:version "1.0"
    :extracted-at (str (java.time.Instant/now))
    :summary {:total-resources (res/resource-count)
-             :total-minables (count (res/minable-list))
-             :total-growables (count (res/growable-list))
-             :total-edibles (count (res/edible-list))
-             :total-drinkables (count (res/drink-list))
+             :total-minables (.size (res/minable-list))
+             :total-growables (.size (res/growable-list))
+             :total-edibles (.size (res/edible-list))
+             :total-drinkables (.size (res/drink-list))
              :categories (res/categories-count)}
    :resources (extract-all-resources)
    :minables (extract-minables-full)
@@ -146,6 +146,10 @@
    (extract-resources-edn (str output-dir "/data"))
    (export-resource-icons (str output-dir "/sprites"))
    (println "Done!")))
+
+(comment
+  (extract-all)
+  :rcf)
 
 ;; ============================================
 ;; Individual Resource Queries

@@ -19,6 +19,14 @@
 ;; Room Registry Access
 ;; ============================================
 
+(defn- get-static-field
+  "Get a static field value using reflection.
+   Used for accessing package-private static fields."
+  [^Class class field-name]
+  (let [field (.getDeclaredField class field-name)]
+    (.setAccessible field true)
+    (.get field nil)))
+
 (defn rooms-instance
   "Get the ROOMS instance from settlement.
    Note: Requires game to be loaded with a settlement."
@@ -29,13 +37,17 @@
   "Get all room blueprints in the game.
    Returns: LIST<RoomBlueprint>"
   []
-  (RoomBlueprint/ALL))
+  (get-static-field RoomBlueprint "ALL"))
+
+(comment
+  (all-blueprints)
+  :rcf)
 
 (defn all-blueprint-imps
   "Get all RoomBlueprintImp instances (rooms with detailed info).
    Returns: LIST<RoomBlueprintImp>"
   []
-  (RoomBlueprintImp/IMPS))
+  (get-static-field RoomBlueprintImp "IMPS"))
 
 (defn blueprint-count
   "Get total number of room blueprints."
@@ -112,7 +124,7 @@
 (defn category-sub-name
   "Get sub-category display name."
   [^RoomCategorySub cat]
-  (str (.-name cat)))
+  (str (.name cat)))
 
 (defn category-sub-rooms
   "Get all rooms in this sub-category."
@@ -122,7 +134,7 @@
 (defn category-main
   "Get the main category for a sub-category."
   [^RoomCategorySub cat]
-  (.-main cat))
+  (.main cat))
 
 (defn category-main-name
   "Get main category display name."

@@ -57,8 +57,9 @@
 (defn structures-summary
   "Get summary statistics for structures."
   []
-  (let [all (struct/all-structures)]
-    {:total-structures (count all)
+  (let [all (struct/all-structures)
+        all-size (.size all)]
+    {:total-structures all-size
      :with-resources (count (filter struct/structure-resource all))
      :unique-resources (->> all
                             (keep struct/structure-resource)
@@ -66,9 +67,9 @@
                             set
                             count)
      :avg-durability (/ (reduce + (map struct/structure-durability all))
-                        (max 1 (count all)))
+                        (max 1 all-size))
      :avg-construct-time (/ (reduce + (map struct/structure-construct-time all))
-                            (max 1 (count all)))}))
+                           (max 1 all-size))}))
 
 ;; ============================================
 ;; Aggregate Data Structure
@@ -152,6 +153,10 @@
    (println "Extracting structures to:" output-dir)
    (extract-structures-edn (str output-dir "/data"))
    (println "Done!")))
+
+(comment
+  (extract-all)
+  :rcf)
 
 ;; ============================================
 ;; Individual Structure Queries
