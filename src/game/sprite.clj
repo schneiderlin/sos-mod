@@ -99,30 +99,87 @@
         {:error (.getMessage e)}))))
 
 ;; Get the tile index from an IconSheet icon
+;; Works with both direct IconSheet instances and Icons that wrap IconSheet
 (defn icon-tile-index [icon]
   (when icon
     (try
       (let [icon-class (class icon)
             icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
-        (if (= icon-sheet-class icon-class)
+        (cond
+          ;; Direct IconSheet instance
+          (= icon-sheet-class icon-class)
           (let [tile-field (.getDeclaredField icon-sheet-class "tile")]
             (.setAccessible tile-field true)
             (.get tile-field icon))
-          nil))
+          
+          ;; Icon wrapping a sprite - check if it has an internal IconSheet
+          ;; Icons have a private 'sprite' field that might be an IconSheet
+          (.isAssignableFrom (Class/forName "init.sprite.UI.Icon") icon-class)
+          (try
+            (let [sprite-field (.getDeclaredField (Class/forName "init.sprite.UI.Icon") "sprite")]
+              (.setAccessible sprite-field true)
+              (let [inner-sprite (.get sprite-field icon)]
+                (when (= icon-sheet-class (class inner-sprite))
+                  (let [tile-field (.getDeclaredField icon-sheet-class "tile")]
+                    (.setAccessible tile-field true)
+                    (.get tile-field inner-sprite)))))
+            (catch Exception _ nil))
+          
+          :else nil))
       (catch Exception _ nil))))
 
 ;; Get the TILE_SHEET from an IconSheet icon
+;; Works with both direct IconSheet instances and Icons that wrap IconSheet
 (defn icon-sheet [icon]
   (when icon
     (try
       (let [icon-class (class icon)
             icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
-        (if (= icon-sheet-class icon-class)
+        (cond
+          ;; Direct IconSheet instance
+          (= icon-sheet-class icon-class)
           (let [sheet-field (.getDeclaredField icon-sheet-class "sheet")]
             (.setAccessible sheet-field true)
             (.get sheet-field icon))
-          nil))
+          
+          ;; Icon wrapping a sprite - check if it has an internal IconSheet
+          (.isAssignableFrom (Class/forName "init.sprite.UI.Icon") icon-class)
+          (try
+            (let [sprite-field (.getDeclaredField (Class/forName "init.sprite.UI.Icon") "sprite")]
+              (.setAccessible sprite-field true)
+              (let [inner-sprite (.get sprite-field icon)]
+                (when (= icon-sheet-class (class inner-sprite))
+                  (let [sheet-field (.getDeclaredField icon-sheet-class "sheet")]
+                    (.setAccessible sheet-field true)
+                    (.get sheet-field inner-sprite)))))
+            (catch Exception _ nil))
+          
+          :else nil))
       (catch Exception _ nil))))
+
+;; Debug function to inspect icon structure
+(defn icon-debug-info
+  "Get detailed debug information about an icon's internal structure."
+  [icon]
+  (when icon
+    (try
+      (let [icon-class (class icon)
+            icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")
+            base-icon-class (Class/forName "init.sprite.UI.Icon")]
+        {:class-name (.getName icon-class)
+         :is-icon-sheet (= icon-sheet-class icon-class)
+         :is-icon (.isAssignableFrom base-icon-class icon-class)
+         :size (try (.-size icon) (catch Exception _ nil))
+         :tile-index (icon-tile-index icon)
+         :has-sprite-field (try
+                             (let [f (.getDeclaredField base-icon-class "sprite")]
+                               (.setAccessible f true)
+                               (let [inner (.get f icon)]
+                                 {:inner-class (.getName (class inner))
+                                  :inner-is-iconsheet (= icon-sheet-class (class inner))}))
+                             (catch Exception e {:error (.getMessage e)}))})
+      (catch Exception e
+        {:error (.getMessage e)}))))
 
 ;; Get comprehensive icon information including sprite sheet details
 (defn icon-full-info [icon]
@@ -804,6 +861,81 @@
       (export-icon-from-sheet size-key tile-index output-path :scale scale)
       {:success false :error "Could not determine icon size"})
     {:success false :error "Icon is not an IconSheet or has no tile index"}))
+
+;; Resource icons are stored in separate PNG files per resource
+;; Path format: data/assets/sprite/icon/24/resource/{Name}.png
+;; The PNG format: left half is color sprite, right half is normal map
+;; Icon size is 24x24 with 6px padding
+
+(defn export-resource-icon-from-file
+  "Export a resource icon directly from its PNG file in data.zip.
+   
+   Resource icons are stored as individual files in:
+     data/assets/sprite/icon/24/resource/{name}.png
+   
+   Arguments:
+     resource-name - The icon file name (e.g., \"Bread\", \"Stone\")  
+     output-path - Where to save the exported icon
+   
+   Options:
+     :index - icon index in the sheet (default 0)
+     :scale - scale factor (default 1)"
+  [resource-name output-path & {:keys [index scale] :or {index 0 scale 1}}]
+  (let [zip-entry-path (str "data/assets/sprite/icon/24/resource/" resource-name ".png")
+        icon-size 24
+        padding 6]
+    ;; Use crop-from-png to extract the icon from the resource-specific PNG
+    (try
+      (let [zip-path "base/data.zip"
+            zip-file (File. zip-path)]
+        (if (and (.exists zip-file) (.isFile zip-file))
+          (let [zip-file-obj (ZipFile. zip-file)
+                zip-entry (.getEntry zip-file-obj zip-entry-path)]
+            (if zip-entry
+              (let [entry-stream (.getInputStream zip-file-obj zip-entry)
+                    source-img (ImageIO/read entry-stream)
+                    _ (.close entry-stream)
+                    _ (.close zip-file-obj)
+                    ;; Calculate grid: PNG is split in half, left side is color sprites
+                    img-width (.getWidth source-img)
+                    img-height (.getHeight source-img)
+                    half-width (/ img-width 2)
+                    cols (int (/ (- half-width padding) (+ icon-size padding)))
+                    rows (int (/ (- img-height padding) (+ icon-size padding)))
+                    total (* cols rows)
+                    ;; Calculate position for the requested index
+                    row (quot index cols)
+                    col (mod index cols)
+                    src-x (+ padding (* col (+ icon-size padding)))
+                    src-y (+ padding (* row (+ icon-size padding)))]
+                (if (< index total)
+                  (let [scaled-size (* icon-size scale)
+                        output-img (BufferedImage. scaled-size scaled-size BufferedImage/TYPE_INT_ARGB)
+                        g (.createGraphics output-img)]
+                    (.drawImage g source-img
+                                0 0 scaled-size scaled-size
+                                src-x src-y (+ src-x icon-size) (+ src-y icon-size)
+                                nil)
+                    (.dispose g)
+                    (let [output-file (File. output-path)
+                          parent-dir (.getParentFile output-file)]
+                      (when (and parent-dir (not (.exists parent-dir)))
+                        (.mkdirs parent-dir)))
+                    (ImageIO/write output-img "png" (File. output-path))
+                    {:success true
+                     :path output-path
+                     :resource-name resource-name
+                     :index index
+                     :size icon-size
+                     :grid {:cols cols :rows rows :total total}
+                     :source-region {:x src-x :y src-y :width icon-size :height icon-size}})
+                  {:success false :error (str "Index " index " out of bounds (max " (dec total) ")")}))
+              (do
+                (.close zip-file-obj)
+                {:success false :error (str "Icon file not found: " zip-entry-path)})))
+          {:success false :error (str "Zip file not found: " zip-path)}))
+      (catch Exception e
+        {:success false :error (str (.getName (.getClass e)) ": " (.getMessage e))}))))
 
 (comment
   ;; Examples:

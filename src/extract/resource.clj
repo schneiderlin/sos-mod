@@ -73,20 +73,47 @@
 ;; Sprite Export
 ;; ============================================
 
+;; Resource key to icon file name mapping
+;; Some resources have icon file names that differ from their keys
+(def resource-icon-name-map
+  {"ALCO_BEER" "Alcohol"
+   "ALCO_WINE" "Alcohol"
+   "_STONE" "Stone"
+   "_WOOD" "Wood"
+   "_LIVESTOCK" "Livestock"
+   "STONE_CUT" "StoneCut"
+   "ARMOUR_LEATHER" "Armour_leather"
+   "ARMOUR_PLATE" "Armour_plate"
+   "WEAPON_HAMMER" "Weapon_hammer"
+   "WEAPON_MOUNT" "Weapon_mount"
+   "WEAPON_SHIELD" "Weapon_shield"
+   "WEAPON_SHORT" "Weapon_short"
+   "WEAPON_SLASH" "Weapon_slash"
+   "WEAPON_SPEAR" "Weapon_spear"})
+
+(defn resource-key->icon-name
+  "Convert resource key to icon file name.
+   E.g., 'BREAD' -> 'Bread', '_STONE' -> 'Stone'"
+  [resource-key]
+  (if-let [mapped-name (get resource-icon-name-map resource-key)]
+    mapped-name
+    ;; Default: capitalize first letter, lowercase rest
+    (let [key (if (.startsWith resource-key "_")
+                (.substring resource-key 1)
+                resource-key)]
+      (str (.toUpperCase (subs key 0 1))
+           (.toLowerCase (subs key 1))))))
+
 (defn get-resource-icon-info
   "Get icon information for a resource.
-   Returns map with :key, :name, :size, :tile-index, etc."
+   Returns map with :key, :name, :icon-name, etc."
   [resource]
   (let [key (res/resource-key resource)
-        icon (res/resource-icon resource)
-        size (sprite/icon-size icon)
-        tile-index (sprite/icon-tile-index icon)]
+        icon-name (resource-key->icon-name key)]
     {:key key
      :name (res/resource-name resource)
-     :icon-size size
-     :tile-index tile-index
-     :size-key (sprite/icon-size-key icon)
-     :has-icon (some? tile-index)}))
+     :icon-name icon-name
+     :icon-path (str "data/assets/sprite/icon/24/resource/" icon-name ".png")}))
 
 (defn export-single-resource-icon
   "Export icon for a single resource.
@@ -97,16 +124,15 @@
    
    Options:
      :scale - scale factor (default 1)
+     :index - icon index in the sheet (default 0)
    
    Returns export result map."
-  [resource output-dir & {:keys [scale] :or {scale 1}}]
+  [resource output-dir & {:keys [scale index] :or {scale 1 index 0}}]
   (let [key (res/resource-key resource)
-        icon (res/resource-icon resource)
-        output-path (str output-dir "/" key ".png")]
-    (if icon
-      (let [result (sprite/export-icon-sprite icon output-path :scale scale)]
-        (assoc result :resource-key key))
-      {:success false :resource-key key :error "Resource has no icon"})))
+        icon-name (resource-key->icon-name key)
+        output-path (str output-dir "/" key ".png")
+        result (sprite/export-resource-icon-from-file icon-name output-path :scale scale :index index)]
+    (assoc result :resource-key key :icon-name icon-name)))
 
 (defn export-resource-icons
   "Export all resource icons to output directory.
@@ -120,12 +146,12 @@
    Returns summary of exported icons."
   [output-dir & {:keys [scale] :or {scale 1}}]
   (println "Exporting resource icons to:" output-dir)
-  (let [resources (res/all-resources)
+  (let [resources (vec (res/all-resources))  ; Convert ArrayList to vector
         results (doall
                  (for [r resources]
                    (export-single-resource-icon r output-dir :scale scale)))
         success-count (count (filter :success results))
-        failed (filter #(not (:success %)) results)]
+        failed (vec (filter #(not (:success %)) results))]
     (println (str "  Exported: " success-count "/" (count resources)))
     (when (seq failed)
       (println (str "  Failed: " (count failed)))
@@ -139,10 +165,10 @@
 (defn build-resource-icon-catalog
   "Build a catalog of all resource icons with their metadata."
   []
-  (->> (res/all-resources)
+  (->> (vec (res/all-resources))
        (map get-resource-icon-info)
-       (filter :has-icon)
-       (sort-by :key)))
+       (sort-by :key)
+       vec))
 
 ;; ============================================
 ;; Main Extraction Functions
