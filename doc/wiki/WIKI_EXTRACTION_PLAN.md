@@ -174,28 +174,31 @@ Character appearance sprites.
 
 ---
 
-### 2. UI Icons (界面图标)
+### 2. UI Icons (界面图标) ✅ Done
 Small icons used in UI.
 
 | Icon Size | Accessor | Size | Status |
 |-----------|----------|------|--------|
-| Small | `SPRITES.icons().s` | 16x16 | Pending |
-| Medium | `SPRITES.icons().m` | 24x24 | Pending |
-| Large | `SPRITES.icons().l` | 32x32 | Pending |
+| Small | `SPRITES.icons().s` | 16x16 | ✅ Done |
+| Medium | `SPRITES.icons().m` | 24x24 | ✅ Done |
+| Large | `SPRITES.icons().l` | 32x32 | ✅ Done |
 
-**Code**: `src/game/sprite.clj` - `icon-small`, `icon-medium`, `icon-large`
+**Code**: `src/game/sprite.clj` - `icon-small`, `icon-medium`, `icon-large`, `export-icon-from-sheet`, `export-named-icon`
+**Extraction**: `src/extract/icon.clj`
 **Details Doc**: `doc/wiki/extract/sprites-icons.md`
 
 ---
 
-### 3. Resource Sprites (资源精灵图)
+### 3. Resource Sprites (资源精灵图) ✅ Done
 Item/material icons.
 
 | Sprite Type | Source | Status |
 |-------------|--------|--------|
-| Resource Icons | `init.resources.Sprite` | Pending |
+| Resource Icons | `RESOURCE.icon()` | ✅ Done |
 | Debris Sprites | debris folder | Pending |
 
+**Code**: `src/game/sprite.clj` - `export-icon-sprite`, `icon-size`, `icon-size-key`
+**Extraction**: `src/extract/resource.clj` - `export-resource-icons`, `extract-resource-sprites`
 **Details Doc**: `doc/wiki/extract/sprites-resources.md`
 
 ---
@@ -271,8 +274,8 @@ output/
 
 ### Phase 3: Sprite Extraction
 - [ ] Complete race sprite export (all races)
-- [ ] UI icons export
-- [ ] Resource sprites export
+- [x] UI icons export (`src/extract/icon.clj`)
+- [x] Resource sprites export (`src/extract/resource.clj`)
 - [ ] Building sprites export
 
 ### Phase 4: Wiki Generation
@@ -331,6 +334,8 @@ output/
 | Religions | `src/game/religion.clj`, `src/extract/religion.clj` | `doc/wiki/extract/religions.md` |
 | Boosters | `src/game/booster.clj`, `src/extract/booster.clj` | `doc/wiki/extract/boosters.md` |
 | Race Sprites | `src/game/sprite.clj` | `doc/src-code/race_sprite_usage.md` |
+| UI Icons | `src/game/sprite.clj`, `src/extract/icon.clj` | `doc/wiki/extract/sprites-icons.md` |
+| Resource Sprites | `src/game/sprite.clj`, `src/extract/resource.clj` | `doc/wiki/extract/sprites-resources.md` |
 | Static Config | - | `doc/src-code/static_config_data.md` |
 | Sprite Loading | - | `doc/src-code/sprite_loading.md` |
 
@@ -345,6 +350,6 @@ output/
 
 ---
 
-*Last Updated: 2026-01-15*
-*Status: Phase 2 - Core Data Extraction (Resources ✅, Races ✅, Technologies ✅, Buildings ✅, Types ✅, Religions ✅, Boosters ✅)*
+*Last Updated: 2026-01-17*
+*Status: Phase 3 - Sprite Extraction (UI Icons ✅, Resource Icons ✅)*
 

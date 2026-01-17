@@ -1,0 +1,195 @@
+{:version "1.0",
+ :extracted-at "2026-01-17T06:06:17.050883600Z",
+ :statistics
+ {:small
+  {:sheet-total 108,
+   :named-count 0,
+   :grid
+   {:cols 4,
+    :rows 27,
+    :total 108,
+    :size 16,
+    :path "data/assets/sprite/icon/16/_Icons.png",
+    :img-size {:width 188, :height 600}}},
+  :medium
+  {:sheet-total 112,
+   :named-count 100,
+   :grid
+   {:cols 8,
+    :rows 14,
+    :total 112,
+    :size 24,
+    :path "data/assets/sprite/icon/24/_Icons.png",
+    :img-size {:width 492, :height 426}}},
+  :large
+  {:sheet-total 24,
+   :named-count 55,
+   :grid
+   {:cols 8,
+    :rows 3,
+    :total 24,
+    :size 32,
+    :path "data/assets/sprite/icon/32/_UI.png",
+    :img-size {:width 620, :height 120}}}},
+ :icons
+ {:small (),
+  :medium
+  ({:name "clear_structure", :index 0, :size 24, :category :medium}
+   {:name "b_muster", :index 0, :size 24, :category :medium}
+   {:name "capitol", :index 1, :size 24, :category :medium}
+   {:name "b_for_tight", :index 1, :size 24, :category :medium}
+   {:name "furniture", :index 2, :size 24, :category :medium}
+   {:name "b_for_loose", :index 2, :size 24, :category :medium}
+   {:name "raider", :index 3, :size 24, :category :medium}
+   {:name "b_run", :index 3, :size 24, :category :medium}
+   {:name "agriculture", :index 4, :size 24, :category :medium}
+   {:name "b_guard", :index 4, :size 24, :category :medium}
+   {:name "fertility", :index 5, :size 24, :category :medium}
+   {:name "b_fire", :index 5, :size 24, :category :medium}
+   {:name "cancel", :index 6, :size 24, :category :medium}
+   {:name "b_fire_stop", :index 6, :size 24, :category :medium}
+   {:name "terrain", :index 7, :size 24, :category :medium}
+   {:name "storage_pullers", :index 8, :size 24, :category :medium}
+   {:name "b_chase", :index 8, :size 24, :category :medium}
+   {:name "crossair", :index 9, :size 24, :category :medium}
+   {:name "b_charge", :index 9, :size 24, :category :medium}
+   {:name "storage_pull", :index 10, :size 24, :category :medium}
+   {:name "b_stop", :index 10, :size 24, :category :medium}
+   {:name "wall", :index 11, :size 24, :category :medium}
+   {:name "anti", :index 12, :size 24, :category :medium}
+   {:name "storage_push", :index 13, :size 24, :category :medium}
+   {:name "noble", :index 14, :size 24, :category :medium}
+   {:name "copy", :index 15, :size 24, :category :medium}
+   {:name "wildlife", :index 16, :size 24, :category :medium}
+   {:name "priority", :index 17, :size 24, :category :medium}
+   {:name "foundation", :index 18, :size 24, :category :medium}
+   {:name "skull", :index 22, :size 24, :category :medium}
+   {:name "descrimination", :index 23, :size 24, :category :medium}
+   {:name "admin", :index 24, :size 24, :category :medium}
+   {:name "ok", :index 26, :size 24, :category :medium}
+   {:name "questionmark", :index 27, :size 24, :category :medium}
+   {:name "arrow_up", :index 28, :size 24, :category :medium}
+   {:name "arrow_right", :index 29, :size 24, :category :medium}
+   {:name "arrow_down", :index 30, :size 24, :category :medium}
+   {:name "arrow_left", :index 31, :size 24, :category :medium}
+   {:name "expand", :index 33, :size 24, :category :medium}
+   {:name "shrink", :index 34, :size 24, :category :medium}
+   {:name "citizen", :index 35, :size 24, :category :medium}
+   {:name "rebellion", :index 36, :size 24, :category :medium}
+   {:name "urn", :index 38, :size 24, :category :medium}
+   {:name "stength", :index 41, :size 24, :category :medium}
+   {:name "plus", :index 42, :size 24, :category :medium}
+   {:name "minus", :index 43, :size 24, :category :medium}
+   {:name "rotate", :index 44, :size 24, :category :medium}
+   {:name "exit", :index 45, :size 24, :category :medium}
+   {:name "repair", :index 46, :size 24, :category :medium}
+   {:name "time", :index 47, :size 24, :category :medium}
+   {:name "menu", :index 48, :size 24, :category :medium}
+   {:name "wheel", :index 49, :size 24, :category :medium}
+   {:name "city", :index 50, :size 24, :category :medium}
+   {:name "flag", :index 52, :size 24, :category :medium}
+   {:name "cog", :index 53, :size 24, :category :medium}
+   {:name "openscroll", :index 54, :size 24, :category :medium}
+   {:name "raw_materials", :index 55, :size 24, :category :medium}
+   {:name "building", :index 59, :size 24, :category :medium}
+   {:name "pickaxe", :index 60, :size 24, :category :medium}
+   {:name "place_fill", :index 61, :size 24, :category :medium}
+   {:name "shield", :index 62, :size 24, :category :medium}
+   {:name "horn", :index 63, :size 24, :category :medium}
+   {:name "clear_food", :index 64, :size 24, :category :medium}
+   {:name "for_loose", :index 65, :size 24, :category :medium}
+   {:name "for_tight", :index 66, :size 24, :category :medium}
+   {:name "fast_forw", :index 67, :size 24, :category :medium}
+   {:name "for_muster", :index 68, :size 24, :category :medium}
+   {:name "circle_frame", :index 69, :size 24, :category :medium}
+   {:name "circle_inner", :index 70, :size 24, :category :medium}
+   {:name "cog_big", :index 72, :size 24, :category :medium}
+   {:name "place_brush", :index 73, :size 24, :category :medium}
+   {:name "place_rec", :index 74, :size 24, :category :medium}
+   {:name "place_line", :index 75, :size 24, :category :medium}
+   {:name "place_ellispse", :index 76, :size 24, :category :medium}
+   {:name "place_rec_hollow", :index 77, :size 24, :category :medium}
+   {:name "trash", :index 78, :size 24, :category :medium}
+   {:name "menu2", :index 79, :size 24, :category :medium}
+   {:name "law", :index 80, :size 24, :category :medium}
+   {:name "overwrite", :index 81, :size 24, :category :medium}
+   {:name "workshop", :index 82, :size 24, :category :medium}
+   {:name "slave", :index 83, :size 24, :category :medium}
+   {:name "water", :index 85, :size 24, :category :medium}
+   {:name "sword", :index 86, :size 24, :category :medium}
+   {:name "heart", :index 89, :size 24, :category :medium}
+   {:name "lock", :index 90, :size 24, :category :medium}
+   {:name "search", :index 91, :size 24, :category :medium}
+   {:name "bow", :index 92, :size 24, :category :medium}
+   {:name "fortification", :index 93, :size 24, :category :medium}
+   {:name "disease", :index 94, :size 24, :category :medium}
+   {:name "ceiling", :index 95, :size 24, :category :medium}
+   {:name "wallceiling", :index 96, :size 24, :category :medium}
+   {:name "chainsFree", :index 97, :size 24, :category :medium}
+   {:name "coins", :index 98, :size 24, :category :medium}
+   {:name "factions", :index 99, :size 24, :category :medium}
+   {:name "place_ellispse_hollow",
+    :index 101,
+    :size 24,
+    :category :medium}
+   {:name "place_hex", :index 102, :size 24, :category :medium}
+   {:name "place_hex_hollow", :index 103, :size 24, :category :medium}
+   {:name "wall_opening", :index 104, :size 24, :category :medium}
+   {:name "gov", :index 105, :size 24, :category :medium}
+   {:name "advice", :index 106, :size 24, :category :medium}),
+  :large
+  ({:name "agri", :index 0, :size 32, :category :large}
+   {:name "bannerPole", :index 0, :size 32, :category :large}
+   {:name "clear_all", :index 0, :size 32, :category :large}
+   {:name "work", :index 1, :size 32, :category :large}
+   {:name "copy", :index 1, :size 32, :category :large}
+   {:name "service", :index 2, :size 32, :category :large}
+   {:name "copyRoom", :index 2, :size 32, :category :large}
+   {:name "jobs", :index 3, :size 32, :category :large}
+   {:name "repair", :index 3, :size 32, :category :large}
+   {:name "gov", :index 4, :size 32, :category :large}
+   {:name "suspend", :index 4, :size 32, :category :large}
+   {:name "mysteryman", :index 5, :size 32, :category :large}
+   {:name "dia", :index 5, :size 32, :category :large}
+   {:name "square", :index 6, :size 32, :category :large}
+   {:name "prints", :index 7, :size 32, :category :large}
+   {:name "rebel", :index 8, :size 32, :category :large}
+   {:name "upgrade", :index 8, :size 32, :category :large}
+   {:name "menu", :index 9, :size 32, :category :large}
+   {:name "mine", :index 9, :size 32, :category :large}
+   {:name "world", :index 10, :size 32, :category :large}
+   {:name "pasture", :index 10, :size 32, :category :large}
+   {:name "battle", :index 11, :size 32, :category :large}
+   {:name "farm", :index 11, :size 32, :category :large}
+   {:name "city", :index 12, :size 32, :category :large}
+   {:name "fish", :index 12, :size 32, :category :large}
+   {:name "coin", :index 13, :size 32, :category :large}
+   {:name "refiner", :index 13, :size 32, :category :large}
+   {:name "flags", :index 14, :size 32, :category :large}
+   {:name "workshop", :index 14, :size 32, :category :large}
+   {:name "vial", :index 15, :size 32, :category :large}
+   {:name "law", :index 15, :size 32, :category :large}
+   {:name "tourist", :index 16, :size 32, :category :large}
+   {:name "trainig", :index 16, :size 32, :category :large}
+   {:name "book", :index 17, :size 32, :category :large}
+   {:name "admin", :index 17, :size 32, :category :large}
+   {:name "up", :index 18, :size 32, :category :large}
+   {:name "breeding", :index 18, :size 32, :category :large}
+   {:name "infra", :index 19, :size 32, :category :large}
+   {:name "decor", :index 19, :size 32, :category :large}
+   {:name "crate", :index 20, :size 32, :category :large}
+   {:name "logistics", :index 20, :size 32, :category :large}
+   {:name "crown", :index 21, :size 32, :category :large}
+   {:name "water", :index 21, :size 32, :category :large}
+   {:name "crossheir", :index 22, :size 32, :category :large}
+   {:name "religion", :index 22, :size 32, :category :large}
+   {:name "swords", :index 23, :size 32, :category :large}
+   {:name "dist", :index 23, :size 32, :category :large}
+   {:name "health", :index 24, :size 32, :category :large}
+   {:name "entertain", :index 25, :size 32, :category :large}
+   {:name "death", :index 26, :size 32, :category :large}
+   {:name "home", :index 27, :size 32, :category :large}
+   {:name "demolish", :index 28, :size 32, :category :large}
+   {:name "event", :index 29, :size 32, :category :large}
+   {:name "eventInactive", :index 30, :size 32, :category :large}
+   {:name "demolishRoad", :index 31, :size 32, :category :large})}}

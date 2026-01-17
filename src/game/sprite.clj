@@ -1,7 +1,6 @@
 (ns game.sprite
   (:import
    [init.sprite SPRITES]
-   [init.sprite.UI UI]
    [init.race RACES]
    [java.awt.image BufferedImage]
    [java.io File]
@@ -570,6 +569,242 @@
                  66 0 380 114 "output/lay-section.png")
   :rcf)
 
+;; ============================================
+;; Icon Export Functions (图标导出)
+;; ============================================
+
+;; Icon sheet configuration
+;; Each icon sheet has a grid of icons with 6px padding
+(def icon-sheet-config
+  {:small  {:size 16 :padding 6 :zip-path "data/assets/sprite/icon/16/_Icons.png"}
+   :medium {:size 24 :padding 6 :zip-path "data/assets/sprite/icon/24/_Icons.png"}
+   :large  {:size 32 :padding 6 :zip-path "data/assets/sprite/icon/32/_UI.png"}
+   ;; Additional sheets
+   :medium-battle {:size 24 :padding 6 :zip-path "data/assets/sprite/icon/24/_Battle.png"}
+   :large-icons   {:size 32 :padding 6 :zip-path "data/assets/sprite/icon/32/_ICONS.png"}
+   :large-banner  {:size 32 :padding 6 :zip-path "data/assets/sprite/icon/32/_BANNER.png"}})
+
+(defn calculate-icon-grid
+  "Calculate icon grid dimensions from image dimensions.
+   Icon sheets use 6px padding around and between icons.
+   Returns {:cols N :rows M :total T}"
+  [img-width img-height icon-size padding]
+  (let [;; PNG is split in half (left half is color, right is ignored for now)
+        half-width (/ img-width 2)
+        cols (/ (- half-width padding) (+ icon-size padding))
+        rows (/ (- img-height padding) (+ icon-size padding))]
+    {:cols (int cols)
+     :rows (int rows)
+     :total (* (int cols) (int rows))}))
+
+(defn icon-position
+  "Calculate pixel position for icon at index.
+   Returns {:x X :y Y}"
+  [index cols icon-size padding]
+  (let [row (quot index cols)
+        col (mod index cols)
+        x (+ padding (* col (+ icon-size padding)))
+        y (+ padding (* row (+ icon-size padding)))]
+    {:x x :y y}))
+
+(defn export-icon-from-sheet
+  "Export a single icon from an icon sheet PNG.
+   
+   Arguments:
+     sheet-key - keyword from icon-sheet-config (:small, :medium, :large, etc.)
+     index - icon index in the sheet (0-based)
+     output-path - where to save the exported icon
+   
+   Options:
+     :scale - scale factor (default 1)"
+  [sheet-key index output-path & {:keys [scale] :or {scale 1}}]
+  (try
+    (let [config (get icon-sheet-config sheet-key)
+          {:keys [size padding zip-path]} config
+          zip-file-path "base/data.zip"
+          zip-file (File. zip-file-path)]
+      (if (and config (.exists zip-file) (.isFile zip-file))
+        (let [zip-file-obj (ZipFile. zip-file)
+              zip-entry (.getEntry zip-file-obj zip-path)]
+          (if zip-entry
+            (let [entry-stream (.getInputStream zip-file-obj zip-entry)
+                  source-img (ImageIO/read entry-stream)
+                  _ (.close entry-stream)
+                  _ (.close zip-file-obj)
+                  img-width (.getWidth source-img)
+                  img-height (.getHeight source-img)
+                  grid (calculate-icon-grid img-width img-height size padding)
+                  {:keys [cols total]} grid]
+              (if (< index total)
+                (let [{:keys [x y]} (icon-position index cols size padding)
+                      scaled-size (* size scale)
+                      output-img (BufferedImage. scaled-size scaled-size BufferedImage/TYPE_INT_ARGB)
+                      g (.createGraphics output-img)]
+                  (.drawImage g source-img
+                              0 0 scaled-size scaled-size
+                              x y (+ x size) (+ y size)
+                              nil)
+                  (.dispose g)
+                  (let [output-file (File. output-path)
+                        parent-dir (.getParentFile output-file)]
+                    (when (and parent-dir (not (.exists parent-dir)))
+                      (.mkdirs parent-dir)))
+                  (ImageIO/write output-img "png" (File. output-path))
+                  {:success true
+                   :path output-path
+                   :index index
+                   :size size
+                   :grid grid
+                   :source-region {:x x :y y :width size :height size}})
+                {:success false :error (str "Index " index " out of bounds (max " (dec total) ")")}))
+            (do
+              (.close zip-file-obj)
+              {:success false :error (str "Entry not found: " zip-path)})))
+        {:success false :error (str "Config not found or zip missing for: " sheet-key)}))
+    (catch Exception e
+      {:success false :error (str (.getName (.getClass e)) ": " (.getMessage e))})))
+
+(defn get-icon-sheet-info
+  "Get information about an icon sheet (grid size, total icons).
+   Returns {:cols N :rows M :total T :size S :path P}"
+  [sheet-key]
+  (try
+    (let [config (get icon-sheet-config sheet-key)
+          {:keys [size padding zip-path]} config
+          zip-file-path "base/data.zip"
+          zip-file (File. zip-file-path)]
+      (if (and config (.exists zip-file) (.isFile zip-file))
+        (let [zip-file-obj (ZipFile. zip-file)
+              zip-entry (.getEntry zip-file-obj zip-path)]
+          (if zip-entry
+            (let [entry-stream (.getInputStream zip-file-obj zip-entry)
+                  source-img (ImageIO/read entry-stream)
+                  _ (.close entry-stream)
+                  _ (.close zip-file-obj)
+                  img-width (.getWidth source-img)
+                  img-height (.getHeight source-img)
+                  grid (calculate-icon-grid img-width img-height size padding)]
+              (assoc grid :size size :path zip-path :img-size {:width img-width :height img-height}))
+            (do
+              (.close zip-file-obj)
+              {:error (str "Entry not found: " zip-path)})))
+        {:error (str "Config not found or zip missing for: " sheet-key)}))
+    (catch Exception e
+      {:error (str (.getName (.getClass e)) ": " (.getMessage e))})))
+
+(defn export-all-icons-from-sheet
+  "Export all icons from an icon sheet to a directory.
+   
+   Arguments:
+     sheet-key - keyword from icon-sheet-config
+     output-dir - directory to save icons (icons will be named 0.png, 1.png, etc.)
+   
+   Options:
+     :scale - scale factor (default 1)
+     :prefix - filename prefix (default \"\")
+   
+   Returns map with :success, :count, :output-dir"
+  [sheet-key output-dir & {:keys [scale prefix] :or {scale 1 prefix ""}}]
+  (let [sheet-info (get-icon-sheet-info sheet-key)]
+    (if (:error sheet-info)
+      {:success false :error (:error sheet-info)}
+      (let [{:keys [total]} sheet-info
+            results (doall
+                     (for [i (range total)]
+                       (let [filename (str prefix (when (seq prefix) "_") i ".png")
+                             path (str output-dir "/" filename)]
+                         (export-icon-from-sheet sheet-key i path :scale scale))))]
+        {:success true
+         :count total
+         :output-dir output-dir
+         :sheet-info sheet-info
+         :results (filter :success results)}))))
+
+(defn export-named-icon
+  "Export an icon by its field name from the game's icon objects.
+   
+   Arguments:
+     size-key - :small, :medium, or :large  
+     icon-name - field name as string (e.g., \"sword\", \"questionmark\")
+     output-path - where to save the icon
+   
+   Options:
+     :scale - scale factor (default 1)"
+  [size-key icon-name output-path & {:keys [scale] :or {scale 1}}]
+  (let [icon (case size-key
+               :small (icon-small icon-name)
+               :medium (icon-medium icon-name)
+               :large (icon-large icon-name)
+               nil)
+        tile-index (when icon (icon-tile-index icon))]
+    (if tile-index
+      (let [sheet-key (case size-key
+                        :small :small
+                        :medium :medium
+                        :large :large)]
+        (export-icon-from-sheet sheet-key tile-index output-path :scale scale))
+      {:success false :error (str "Icon not found: " icon-name " (size: " size-key ")")})))
+
+(defn build-icon-catalog
+  "Build a catalog of all named icons with their indices.
+   Returns {:small {...} :medium {...} :large {...}}"
+  []
+  {:small (->> (list-small-icon-fields)
+               (map (fn [name] 
+                      [name {:index (icon-tile-index (icon-small name))
+                             :info (icon-info (icon-small name))}]))
+               (into {}))
+   :medium (->> (list-medium-icon-fields)
+                (map (fn [name]
+                       [name {:index (icon-tile-index (icon-medium name))
+                              :info (icon-info (icon-medium name))}]))
+                (into {}))
+   :large (->> (list-large-icon-fields)
+               (map (fn [name]
+                      [name {:index (icon-tile-index (icon-large name))
+                             :info (icon-info (icon-large name))}]))
+               (into {}))})
+
+;; ============================================
+;; Resource Icon Functions (资源图标函数)
+;; ============================================
+
+(defn icon-size
+  "Get the native size of an icon (16, 24, or 32)."
+  [icon]
+  (when icon
+    (try
+      (.-size icon)
+      (catch Exception _ nil))))
+
+(defn icon-size-key
+  "Get the sheet key (:small, :medium, :large) based on icon size."
+  [icon]
+  (case (icon-size icon)
+    16 :small
+    24 :medium
+    32 :large
+    nil))
+
+(defn export-icon-sprite
+  "Export any Icon object to PNG file.
+   Works with resource icons, building icons, etc.
+   
+   Arguments:
+     icon - Icon object (from RESOURCE.icon(), etc.)
+     output-path - where to save the PNG
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns map with :success and details."
+  [icon output-path & {:keys [scale] :or {scale 1}}]
+  (if-let [tile-index (icon-tile-index icon)]
+    (if-let [size-key (icon-size-key icon)]
+      (export-icon-from-sheet size-key tile-index output-path :scale scale)
+      {:success false :error "Could not determine icon size"})
+    {:success false :error "Icon is not an IconSheet or has no tile index"}))
+
 (comment
   ;; Examples:
   
@@ -588,6 +823,28 @@
   (.-sword (icons-small))
   (.-sword (icons-medium))
   (.-sword (icons-large))
+  
+  ;; Get icon sheet info
+  (get-icon-sheet-info :small)
+  (get-icon-sheet-info :medium)
+  (get-icon-sheet-info :large)
+  
+  ;; Export single icon by index
+  (export-icon-from-sheet :small 0 "output/icons/small_0.png")
+  (export-icon-from-sheet :medium 10 "output/icons/medium_10.png")
+  (export-icon-from-sheet :large 5 "output/icons/large_5.png")
+  
+  ;; Export icon by name
+  (export-named-icon :small "sword" "output/icons/sword_small.png")
+  (export-named-icon :medium "questionmark" "output/icons/questionmark_medium.png")
+  
+  ;; Export all icons from a sheet
+  (export-all-icons-from-sheet :small "output/icons/small")
+  (export-all-icons-from-sheet :medium "output/icons/medium")
+  (export-all-icons-from-sheet :large "output/icons/large")
+  
+  ;; Build icon catalog
+  (build-icon-catalog)
   
   ;; Get game sprites
   (game-sheets)
@@ -613,5 +870,13 @@
   ;; (settlement-sprites)  ; Note: SPRITES.sett() does not exist
   (load-screen)
   (special-sprites)
+  
+  ;; === Resource Icon Examples ===
+  ;; (require '[game.resource :as res])
+  ;; (def bread (res/get-resource "BREAD"))
+  ;; (def bread-icon (res/resource-icon bread))
+  ;; (icon-size bread-icon)        ; => 24 (medium icon)
+  ;; (icon-tile-index bread-icon)  ; => tile index in the sheet
+  ;; (export-icon-sprite bread-icon "output/bread_icon.png")
   
   :rcf)
