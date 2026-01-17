@@ -10,6 +10,7 @@
    "
   (:require
    [game.race :as race]
+   [game.sprite :as sprite]
    [extract.common :as common]
    [clojure.string]))
 
@@ -206,17 +207,228 @@
       (println))))
 
 ;; ============================================
+;; Sprite Export
+;; ============================================
+
+;; Action types for sheet sprites (from game.sprite)
+(def sheet-actions
+  [:feet-none :feet-right :feet-right2 :feet-left :feet-left2
+   :tunic :torso-still :torso-right :torso-right2 :torso-right3
+   :torso-left :torso-left2 :torso-left3 :torso-carry :torso-out :torso-out2
+   :head :shadow])
+
+;; Map game race keys to sprite file names
+;; Sprite files are stored as: data/assets/sprite/race/{Name}.png
+;; Game keys are uppercase (e.g., "HUMAN"), file names are capitalized (e.g., "Human")
+(def race-key->sprite-name
+  {"ARGONOSH"  "Argonosh"
+   "CANTOR"    "Cantor"
+   "CRETONIAN" "Cretonian"
+   "DONDORIAN" "Dondorian"
+   "GARTHIMI"  "Garthimi"
+   "HUMAN"     "Human"
+   "Q_AMEVIA"  "Amevia"
+   "TILAPI"    "Tilapi"})
+
+(defn get-race-sprite-name
+  "Get the sprite file name for a race key.
+   E.g., 'HUMAN' -> 'Human', 'Q_AMEVIA' -> 'Amevia'"
+  [race-key]
+  (get race-key->sprite-name race-key
+       ;; Fallback: capitalize first letter, lowercase rest
+       (str (.toUpperCase (subs race-key 0 1))
+            (.toLowerCase (subs race-key 1)))))
+
+(defn export-race-sheet-sprites
+  "Export all sheet sprites (standing/walking) for a single race.
+   
+   Arguments:
+     race-key - game race key string (e.g., \"HUMAN\", \"Q_AMEVIA\")
+     output-dir - base directory (will create race-key/sheet/ subdirectory)
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns summary of exported sprites."
+  [race-key output-dir & {:keys [scale] :or {scale 1}}]
+  (let [sprite-name (get-race-sprite-name race-key)
+        sheet-dir (str output-dir "/" race-key "/sheet")
+        results (doall
+                 (for [action sheet-actions]
+                   (let [action-name (name action)
+                         ;; Export body sprite
+                         body-path (str sheet-dir "/" action-name ".png")
+                         body-result (sprite/export-race-sprite :sheet sprite-name action body-path :scale scale)
+                         ;; Export normal map
+                         normal-path (str sheet-dir "/" action-name "_normal.png")
+                         normal-result (sprite/export-race-sprite :sheet sprite-name action normal-path :scale scale :normal true)]
+                     {:action action
+                      :body body-result
+                      :normal normal-result})))
+        success-count (count (filter #(and (:success (:body %)) (:success (:normal %))) results))]
+    {:race-key race-key
+     :sprite-name sprite-name
+     :type :sheet
+     :total (* 2 (count sheet-actions))  ; body + normal for each action
+     :success-count (* 2 success-count)
+     :output-dir sheet-dir
+     :results results}))
+
+(defn export-race-lay-sprites
+  "Export all lay sprites (lying down) for a single race.
+   
+   Arguments:
+     race-key - game race key string (e.g., \"HUMAN\", \"Q_AMEVIA\")
+     output-dir - base directory (will create race-key/lay/ subdirectory)
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns summary of exported sprites."
+  [race-key output-dir & {:keys [scale] :or {scale 1}}]
+  (let [sprite-name (get-race-sprite-name race-key)
+        lay-dir (str output-dir "/" race-key "/lay")
+        ;; Export body sprites (indices 0-11)
+        body-results (doall
+                      (for [i (range 12)]
+                        (let [path (str lay-dir "/" i ".png")
+                              result (sprite/export-race-sprite :lay sprite-name i path :scale scale)]
+                          {:index i :type :body :result result})))
+        ;; Export normal maps (indices 12-23)
+        normal-results (doall
+                        (for [i (range 12)]
+                          (let [path (str lay-dir "/" i "_normal.png")
+                                result (sprite/export-race-sprite :lay sprite-name (+ i 12) path :scale scale)]
+                            {:index (+ i 12) :type :normal :result result})))
+        all-results (concat body-results normal-results)
+        success-count (count (filter #(:success (:result %)) all-results))]
+    {:race-key race-key
+     :sprite-name sprite-name
+     :type :lay
+     :total (* 2 12)  ; 12 body + 12 normal
+     :success-count success-count
+     :output-dir lay-dir
+     :results all-results}))
+
+(defn export-single-race-sprites
+  "Export all sprites (sheet + lay) for a single race.
+   
+   Arguments:
+     race-key - race key string (e.g., \"Human\")
+     output-dir - base sprites directory
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns combined summary."
+  [race-key output-dir & {:keys [scale] :or {scale 1}}]
+  (let [sheet-result (export-race-sheet-sprites race-key output-dir :scale scale)
+        lay-result (export-race-lay-sprites race-key output-dir :scale scale)]
+    {:race-key race-key
+     :sheet sheet-result
+     :lay lay-result
+     :total (+ (:total sheet-result) (:total lay-result))
+     :success-count (+ (:success-count sheet-result) (:success-count lay-result))}))
+
+(defn export-all-race-sprites
+  "Export all sprites for all races.
+   
+   Arguments:
+     output-dir - base sprites directory (will create races/ subdirectory)
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns summary of all exports."
+  [output-dir & {:keys [scale] :or {scale 1}}]
+  (let [races-dir (str output-dir "/races")
+        all-races (vec (race/all-races))  ; Convert ArrayList to vector
+        results (doall
+                 (for [r all-races]
+                   (let [race-key (race/race-key r)
+                         _ (println (str "  Exporting " race-key "..."))
+                         result (export-single-race-sprites race-key races-dir :scale scale)]
+                     result)))
+        total-exported (reduce + (map :success-count results))
+        total-expected (reduce + (map :total results))]
+    {:total-races (count all-races)
+     :total-sprites total-expected
+     :success-count total-exported
+     :output-dir races-dir
+     :results results}))
+
+(defn extract-race-sprites
+  "Export all race sprites to output directory.
+   
+   Directory structure:
+     output-dir/
+       sprites/
+         races/
+           Human/
+             sheet/    - 18 actions × 2 (body + normal)
+             lay/      - 12 positions × 2 (body + normal)
+           Dondorian/
+             ...
+   "
+  ([] (extract-race-sprites *output-dir*))
+  ([output-dir]
+   (let [sprites-dir (str output-dir "/sprites")]
+     (println "Exporting race sprites to:" sprites-dir)
+     (export-all-race-sprites sprites-dir))))
+
+(defn build-race-sprite-metadata
+  "Build metadata for all race sprites (for wiki data).
+   Returns a map with sprite paths for each race."
+  []
+  (vec
+   (for [r (race/all-races)]
+     (let [race-key (race/race-key r)
+           base-path (str "sprites/races/" race-key)]
+       {:race-key race-key
+        :sheet-sprites (vec (for [action sheet-actions]
+                              {:action action
+                               :path (str base-path "/sheet/" (name action) ".png")
+                               :normal-path (str base-path "/sheet/" (name action) "_normal.png")
+                               :size 24}))
+        :lay-sprites (vec (for [i (range 12)]
+                            {:index i
+                             :path (str base-path "/lay/" i ".png")
+                             :normal-path (str base-path "/lay/" i "_normal.png")
+                             :size 32}))}))))
+
+;; ============================================
 ;; Main Extraction Functions
 ;; ============================================
 
 (defn extract-all
-  "Extract all race data."
+  "Extract all race data and sprites.
+   
+   Outputs:
+     - data/races.edn - Race data catalog
+     - data/race-relations.edn - Race relations matrix
+     - sprites/races/*/sheet/*.png - Sheet sprites (standing/walking)
+     - sprites/races/*/lay/*.png - Lay sprites (lying down)"
   ([] (extract-all *output-dir*))
   ([output-dir]
-   (println "Extracting races to:" output-dir)
+   (println "========================================")
+   (println "Race Extraction")
+   (println "========================================")
+   (println)
+   
+   ;; Extract data
+   (println "Extracting race data...")
    (extract-races-edn (str output-dir "/data"))
    (extract-race-relations-edn (str output-dir "/data"))
-   (println "Done!")))
+   (println)
+   
+   ;; Extract sprites
+   (println "Extracting race sprites...")
+   (let [result (extract-race-sprites output-dir)]
+     (println (str "  Exported: " (:success-count result) "/" (:total-sprites result) " sprites"))
+     (println (str "  Races: " (:total-races result))))
+   
+   (println)
+   (println "========================================")))
 
 (comment
   (extract-all)
@@ -293,7 +505,29 @@
   ;; List boosts for a race
   (list-race-boosts "HUMAN")
   
-  ;; Full extraction
+  ;; === Sprite Export ===
+  
+  ;; Export single race sprites (for testing)
+  ;; Use game race keys like "HUMAN", "Q_AMEVIA", "DONDORIAN"
+  (export-single-race-sprites "HUMAN" "output/wiki/sprites/races")
+  
+  ;; Export sheet sprites only (standing/walking, 18 actions × 2)
+  (export-race-sheet-sprites "HUMAN" "output/wiki/sprites/races")
+  
+  ;; Export lay sprites only (lying down, 12 positions × 2)
+  (export-race-lay-sprites "HUMAN" "output/wiki/sprites/races")
+  
+  ;; Export all race sprites (all 8 races)
+  (extract-race-sprites "output/wiki")
+  
+  ;; Build sprite metadata for wiki
+  (take 1 (build-race-sprite-metadata))
+  
+  ;; Race key to sprite name mapping
+  (get-race-sprite-name "Q_AMEVIA")  ; => "Amevia"
+  (get-race-sprite-name "HUMAN")     ; => "Human"
+  
+  ;; === Full Extraction (data + sprites) ===
   (extract-all "output/wiki")
   
   :rcf)

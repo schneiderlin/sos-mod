@@ -203,7 +203,7 @@ Item/material icons.
 
 ---
 
-### 4. Building/Room Sprites (建筑精灵图)
+### 4. Building/Room Sprites (建筑精灵图) ✅ Done
 Structure visuals.
 
 | Sprite Type | Source | Status |
@@ -218,16 +218,19 @@ Structure visuals.
 
 ---
 
-### 5. Game Sprites (游戏精灵图)
+### 5. Game Sprites (游戏精灵图) ✅ Done
 Miscellaneous game graphics.
 
 | Sprite Type | Accessor | Status |
 |-------------|----------|--------|
-| Game Sheets | `SPRITES.GAME()` | Pending |
-| Textures | `SPRITES.textures()` | Pending |
-| Special Sprites | `SPRITES.specials()` | Pending |
-| Load Screen | `SPRITES.loadScreen()` | Pending |
+| Textures | `SPRITES.textures()` | ✅ Done |
+| Load Screen | `SPRITES.loadScreen()` | ✅ Done |
+| UI Specials | `SPRITES.specials()` | ✅ Done |
+| UI Construction | `SPRITES.cons()` | ✅ Done |
+| Game Sheets | `SPRITES.GAME()` | ✅ Done |
 
+**Code**: `src/game/sprite.clj` - `textures`, `load-screen`, `special-sprites`, `cons-sprites`, `game-sheets`
+**Extraction**: `src/extract/game_sprite.clj` - `export-texture`, `export-load-screen`, `export-all-textures`, `export-ui-sprite`
 **Details Doc**: `doc/wiki/extract/sprites-game.md`
 
 ---
@@ -275,10 +278,11 @@ output/
 - [x] Buildings/Rooms extraction (`src/game/building.clj`)
 
 ### Phase 3: Sprite Extraction
-- [ ] Complete race sprite export (all races)
+- [x] Complete race sprite export (all races) - `src/extract/race.clj`
 - [x] UI icons export (`src/extract/icon.clj`)
 - [x] Resource sprites export (`src/extract/resource.clj`)
 - [x] Building icons export (`src/extract/building.clj`)
+- [x] Game sprites export (`src/extract/game_sprite.clj`)
 - [ ] Building furniture sprites
 
 ### Phase 4: Wiki Generation
@@ -340,6 +344,7 @@ output/
 | Race Sprites | `src/game/sprite.clj` | `doc/src-code/race_sprite_usage.md` |
 | UI Icons | `src/game/sprite.clj`, `src/extract/icon.clj` | `doc/wiki/extract/sprites-icons.md` |
 | Resource Sprites | `src/game/sprite.clj`, `src/extract/resource.clj` | `doc/wiki/extract/sprites-resources.md` |
+| Game Sprites | `src/game/sprite.clj`, `src/extract/game_sprite.clj` | `doc/wiki/extract/sprites-game.md` |
 | Static Config | - | `doc/src-code/static_config_data.md` |
 | Sprite Loading | - | `doc/src-code/sprite_loading.md` |
 
@@ -355,5 +360,5 @@ output/
 ---
 
 *Last Updated: 2026-01-17*
-*Status: Phase 3 - Sprite Extraction (UI Icons ✅, Resource Icons ✅, Building Icons ✅)*
+*Status: Phase 3 - Sprite Extraction (Race Sprites ✅, UI Icons ✅, Resource Icons ✅, Building Icons ✅, Game Sprites ✅)*
 

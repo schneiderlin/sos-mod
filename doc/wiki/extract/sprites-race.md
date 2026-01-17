@@ -153,29 +153,41 @@ output/sprites/races/
   ]}
 ```
 
-## Batch Export Function (TODO)
+## Batch Export Functions
+
+Located in `src/extract/race.clj`:
 
 ```clojure
-(defn export-all-race-sprites
-  "Export all sprites for all races"
-  [output-dir]
-  (doseq [race (RACES/all)]
-    (let [race-key (.key race)
-          race-dir (str output-dir "/sprites/races/" race-key)]
-      ;; Export sheet sprites
-      (doseq [[action _] action-rows]
-        (export-race-sprite :sheet race-key action 
-                           (str race-dir "/sheet/" (name action) ".png"))
-        (export-race-sprite :sheet race-key action 
-                           (str race-dir "/sheet/" (name action) "_normal.png")
-                           :normal true))
-      ;; Export lay sprites
-      (doseq [i (range 12)]
-        (export-race-sprite :lay race-key i 
-                           (str race-dir "/lay/" i ".png"))
-        (export-race-sprite :lay race-key (+ i 12) 
-                           (str race-dir "/lay/" i "_normal.png"))))))
+;; Export all sprites for a single race
+(export-single-race-sprites "HUMAN" "output/wiki/sprites/races")
+
+;; Export sheet sprites only (18 actions × 2)
+(export-race-sheet-sprites "HUMAN" "output/wiki/sprites/races")
+
+;; Export lay sprites only (12 positions × 2)
+(export-race-lay-sprites "HUMAN" "output/wiki/sprites/races")
+
+;; Export all race sprites (all 8 races)
+(extract-race-sprites "output/wiki")
+
+;; Full extraction (data + sprites)
+(extract-all "output/wiki")
 ```
+
+### Race Key to Sprite Name Mapping
+
+Game race keys (e.g., "HUMAN", "Q_AMEVIA") map to sprite file names:
+
+| Race Key | Sprite File |
+|----------|-------------|
+| ARGONOSH | Argonosh.png |
+| CANTOR | Cantor.png |
+| CRETONIAN | Cretonian.png |
+| DONDORIAN | Dondorian.png |
+| GARTHIMI | Garthimi.png |
+| HUMAN | Human.png |
+| Q_AMEVIA | Amevia.png |
+| TILAPI | Tilapi.png |
 
 ## Progress
 
@@ -184,7 +196,8 @@ output/sprites/races/
 - [x] Sheet sprite extraction
 - [x] Lay sprite extraction  
 - [x] Normal map extraction
-- [ ] Batch export all races
+- [x] Race key to sprite name mapping
+- [x] Batch export all races
 - [ ] Portrait sprites
 - [ ] Child sprites (smaller size)
 - [ ] Crown/addon sprites
