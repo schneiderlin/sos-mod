@@ -208,10 +208,12 @@ Structure visuals.
 
 | Sprite Type | Source | Status |
 |-------------|--------|--------|
-| Room Sprites | `settlement.room.sprite` | Pending |
+| Room Icons | `RoomBlueprintImp.icon` | ✅ Done |
 | Furniture Sprites | Various | Pending |
 | Construction Overlays | `SPRITES.cons()` | Pending |
 
+**Code**: `src/game/building.clj` - `room-icon`, `room-icon-info`, `icon-tile-index`
+**Extraction**: `src/extract/building.clj` - `export-room-icons`, `extract-room-sprites`
 **Details Doc**: `doc/wiki/extract/sprites-buildings.md`
 
 ---
@@ -276,7 +278,8 @@ output/
 - [ ] Complete race sprite export (all races)
 - [x] UI icons export (`src/extract/icon.clj`)
 - [x] Resource sprites export (`src/extract/resource.clj`)
-- [ ] Building sprites export
+- [x] Building icons export (`src/extract/building.clj`)
+- [ ] Building furniture sprites
 
 ### Phase 4: Wiki Generation
 - [ ] Generate markdown pages from data
@@ -330,6 +333,7 @@ output/
 | Races | `src/game/race.clj`, `src/extract/race.clj` | `doc/wiki/extract/races.md` |
 | Technologies | `src/game/tech.clj`, `src/extract/tech.clj` | `doc/wiki/extract/technologies.md` |
 | Buildings/Rooms | `src/game/building.clj`, `src/extract/building.clj` | `doc/wiki/extract/buildings.md` |
+| Building Icons | `src/game/building.clj`, `src/extract/building.clj` | `doc/wiki/extract/sprites-buildings.md` |
 | Types/Enums | `src/game/type.clj`, `src/extract/type.clj` | `doc/wiki/extract/types.md` |
 | Religions | `src/game/religion.clj`, `src/extract/religion.clj` | `doc/wiki/extract/religions.md` |
 | Boosters | `src/game/booster.clj`, `src/extract/booster.clj` | `doc/wiki/extract/boosters.md` |
@@ -351,5 +355,5 @@ output/
 ---
 
 *Last Updated: 2026-01-17*
-*Status: Phase 3 - Sprite Extraction (UI Icons ✅, Resource Icons ✅)*
+*Status: Phase 3 - Sprite Extraction (UI Icons ✅, Resource Icons ✅, Building Icons ✅)*
 

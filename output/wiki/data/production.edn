@@ -1,5 +1,5 @@
 {:version "1.0",
- :extracted-at "2026-01-17T05:45:17.065765900Z",
+ :extracted-at "2026-01-17T06:27:57.957084600Z",
  :summary {:total-production-rooms 49},
  :rooms
  [{:description "种植并砍伐树木。将会持续生产木材。",

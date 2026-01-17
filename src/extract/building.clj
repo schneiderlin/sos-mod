@@ -10,8 +10,10 @@
    "
   (:require
    [game.building :as build]
+   [game.sprite :as sprite]
    [extract.common :as common]
-   [clojure.pprint]))
+   [clojure.pprint]
+   [clojure.string :as str]))
 
 ;; ============================================
 ;; Configuration
@@ -229,7 +231,148 @@
   [resource-key]
   (mapv #(build/room-imp->map %) (build/find-rooms-consuming resource-key)))
 
+;; ============================================
+;; Sprite Export Functions
+;; ============================================
+
+(defn get-room-icon-info
+  "Get icon information for a room.
+   Returns map with :key, :name, :icon-size, :tile-index, etc."
+  [room]
+  (build/room-icon-info room))
+
+(defn export-single-room-icon
+  "Export icon for a single room.
+   
+   Arguments:
+     room - RoomBlueprintImp object
+     output-dir - base directory for output
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns export result map."
+  [room output-dir & {:keys [scale] :or {scale 1}}]
+  (let [key (build/blueprint-key room)
+        icon (build/room-icon room)
+        tile-index (build/icon-tile-index icon)
+        size-key (build/icon-size-key icon)
+        output-path (str output-dir "/" key ".png")]
+    (if (and tile-index size-key)
+      (let [result (sprite/export-icon-from-sheet size-key tile-index output-path :scale scale)]
+        (assoc result :room-key key :icon-size-key size-key))
+      {:success false
+       :room-key key
+       :is-composite (build/icon-is-composite? icon)
+       :inner-class (build/icon-inner-class-name icon)
+       :error (if (build/icon-is-composite? icon)
+                "Composite icon (BG+FG) - requires manual extraction"
+                "Could not determine icon tile index or size")})))
+
+(defn export-room-icons
+  "Export all room icons to output directory.
+   
+   Arguments:
+     output-dir - directory to save icons (e.g., \"output/wiki/sprites/buildings\")
+   
+   Options:
+     :scale - scale factor (default 1)
+   
+   Returns summary of exported icons."
+  [output-dir & {:keys [scale] :or {scale 1}}]
+  (println "Exporting room icons to:" output-dir)
+  (let [rooms (vec (build/all-blueprint-imps))
+        results (doall
+                 (for [r rooms]
+                   (export-single-room-icon r output-dir :scale scale)))
+        success-count (count (filter :success results))
+        failed (vec (filter #(not (:success %)) results))
+        composite-count (count (filter :is-composite failed))]
+    (println (str "  Exported: " success-count "/" (count rooms)))
+    (when (seq failed)
+      (println (str "  Failed: " (count failed) " (" composite-count " composite icons)"))
+      (doseq [{:keys [room-key error]} (take 5 failed)]
+        (println (str "    - " room-key ": " error))))
+    {:total (count rooms)
+     :success-count success-count
+     :failed-count (count failed)
+     :composite-count composite-count
+     :failed failed}))
+
+(defn list-composite-icon-rooms
+  "List all rooms that have composite icons (BG+FG) which can't be auto-extracted.
+   Groups them by their base type (e.g., MINE_CLAY, MINE_COAL -> MINE)."
+  []
+  (let [rooms (vec (build/all-blueprint-imps))
+        composite-rooms (->> rooms
+                             (filter #(build/icon-is-composite? (build/room-icon %)))
+                             (map (fn [r]
+                                    (let [key (build/blueprint-key r)]
+                                      {:key key
+                                       :name (build/room-name r)
+                                       :type (build/room-type r)
+                                       :base-type (first (str/split key #"_"))}))))]
+    {:total (count composite-rooms)
+     :by-base-type (->> composite-rooms
+                        (group-by :base-type)
+                        (map (fn [[k v]] [k (mapv :key v)]))
+                        (into (sorted-map)))
+     :rooms composite-rooms}))
+
+(defn build-room-icon-catalog
+  "Build a catalog of all room icons with their metadata."
+  []
+  (->> (vec (build/all-blueprint-imps))
+       (map get-room-icon-info)
+       (sort-by :key)
+       vec))
+
+(defn extract-room-sprites
+  "Export all room sprites to output directory.
+   
+   Directory structure:
+     output-dir/
+       sprites/
+         buildings/   - Room icons by key (e.g., FARM.png)"
+  ([] (extract-room-sprites *output-dir*))
+  ([output-dir]
+   (let [sprites-dir (str output-dir "/sprites/buildings")]
+     (println "Extracting room sprites to:" sprites-dir)
+     (export-room-icons sprites-dir))))
+
+;; ============================================
+;; Updated Main Extraction Functions
+;; ============================================
+
+(defn extract-all-with-sprites
+  "Extract all building data and sprites.
+   
+   Outputs:
+     - data/buildings.edn - Building data catalog
+     - data/production.edn - Production-focused data
+     - sprites/buildings/*.png - Room icons"
+  ([] (extract-all-with-sprites *output-dir*))
+  ([output-dir]
+   (println "========================================")
+   (println "Building/Room Extraction")
+   (println "========================================")
+   (println)
+   
+   ;; Extract data
+   (println "Extracting building data...")
+   (extract-buildings-edn (str output-dir "/data"))
+   (extract-production-edn (str output-dir "/data"))
+   (println)
+   
+   ;; Extract sprites
+   (extract-room-sprites output-dir)
+   
+   (println)
+   (println "========================================")))
+
 (comment
+  (extract-all-with-sprites)
+
   ;; === Quick Test ===
   
   ;; Check if game is loaded
@@ -263,8 +406,33 @@
   (find-producers "BREAD")
   (find-consumers "_STONE")
   
-  ;; Full extraction
+  ;; Full extraction (data only)
   (extract-all "output/wiki")
+  
+  ;; === Room Icon Extraction ===
+  
+  ;; Get icon info for a room
+  (get-room-icon-info (build/find-room-by-key "FARM"))
+  ;; => {:key "FARM", :name "Farm", :icon-size 24, :tile-index N, ...}
+  
+  ;; Build catalog of all room icons
+  (take 5 (build-room-icon-catalog))
+  
+  ;; Export single room icon
+  (export-single-room-icon (build/find-room-by-key "FARM") "output/test/buildings")
+  
+  ;; Export all room icons
+  (export-room-icons "output/wiki/sprites/buildings")
+  
+  ;; List composite icons that can't be auto-extracted
+  (list-composite-icon-rooms)
+  ;; => {:total N, :by-base-type {"MINE" [...], "FISHERY" [...]}, ...}
+  
+  ;; Export only sprites
+  (extract-room-sprites "output/wiki")
+  
+  ;; Full extraction with sprites (data + sprites)
+  (extract-all-with-sprites "output/wiki")
   
   :rcf)
 

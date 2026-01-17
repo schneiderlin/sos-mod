@@ -6,14 +6,16 @@
    - Accessing room registry (all blueprints)
    - Getting room properties (name, desc, category, etc.)
    - Querying room categories
-   - Accessing construction costs and production info"
+   - Accessing construction costs and production info
+   - Accessing room icons for sprite extraction"
   (:import
    [settlement.room.main RoomBlueprint RoomBlueprintImp]
    [settlement.room.main.category RoomCategorySub RoomCategories$RoomCategoryMain]
    [settlement.room.main.furnisher Furnisher]
    [settlement.room.industry.module Industry IndustryResource INDUSTRY_HASER]
    [settlement.main SETT]
-   [init.resources RESOURCE]))
+   [init.resources RESOURCE]
+   [init.sprite.UI Icon]))
 
 ;; ============================================
 ;; Room Registry Access
@@ -245,6 +247,112 @@
   "Get AI production multiplier."
   [^Industry ind]
   (.-AIMul ind))
+
+;; ============================================
+;; Room Icon Access
+;; ============================================
+
+(defn room-icon
+  "Get room's icon (Icon object).
+   Returns the Icon from RoomBlueprintImp."
+  [^RoomBlueprintImp room]
+  (.-icon room))
+
+(defn room-icon-big
+  "Get room's big icon (scaled to 32x32)."
+  [^RoomBlueprintImp room]
+  (.iconBig room))
+
+(defn icon-size
+  "Get the native size of an icon (16, 24, or 32)."
+  [^Icon icon]
+  (when icon
+    (.-size icon)))
+
+(defn icon-size-key
+  "Get the sheet key (:small, :medium, :large) based on icon size."
+  [icon]
+  (case (icon-size icon)
+    16 :small
+    24 :medium
+    32 :large
+    nil))
+
+(defn- get-icon-sheet-private
+  "Get the internal IconSheet from an Icon using reflection.
+   Icons may wrap an IconSheet internally."
+  [icon]
+  (when icon
+    (try
+      (let [icon-class (Class/forName "init.sprite.UI.Icon")
+            sprite-field (.getDeclaredField icon-class "sprite")]
+        (.setAccessible sprite-field true)
+        (.get sprite-field icon))
+      (catch Exception _ nil))))
+
+(defn- get-tile-from-iconsheet
+  "Extract tile index from an IconSheet object."
+  [iconsheet]
+  (when iconsheet
+    (try
+      (let [icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
+        (when (= icon-sheet-class (class iconsheet))
+          (let [tile-field (.getDeclaredField icon-sheet-class "tile")]
+            (.setAccessible tile-field true)
+            (.get tile-field iconsheet))))
+      (catch Exception _ nil))))
+
+(defn icon-tile-index
+  "Get the tile index from an Icon.
+   Works by getting the inner sprite and extracting tile if it's an IconSheet."
+  [icon]
+  (when icon
+    (try
+      (let [icon-class (class icon)
+            icon-sheet-class (Class/forName "init.sprite.UI.Icon$IconSheet")]
+        (cond
+          ;; Direct IconSheet instance
+          (= icon-sheet-class icon-class)
+          (get-tile-from-iconsheet icon)
+          
+          ;; Icon wrapping a sprite - check if it has an internal IconSheet
+          :else
+          (let [inner-sprite (get-icon-sheet-private icon)]
+            (when (= icon-sheet-class (class inner-sprite))
+              (get-tile-from-iconsheet inner-sprite)))))
+      (catch Exception _ nil))))
+
+(defn icon-is-composite?
+  "Check if an icon is a composite icon (BG + FG) rather than a simple IconSheet.
+   Composite icons can't be extracted by tile index."
+  [icon]
+  (when icon
+    (let [inner-sprite (get-icon-sheet-private icon)
+          icon-sheet-class (try (Class/forName "init.sprite.UI.Icon$IconSheet") (catch Exception _ nil))]
+      (and inner-sprite
+           (not= icon-sheet-class (class inner-sprite))))))
+
+(defn icon-inner-class-name
+  "Get the class name of the inner sprite for debugging."
+  [icon]
+  (when icon
+    (when-let [inner (get-icon-sheet-private icon)]
+      (.getName (class inner)))))
+
+(defn room-icon-info
+  "Get icon information for a room.
+   Returns map with :key, :name, :icon-size, :tile-index, etc."
+  [^RoomBlueprintImp room]
+  (let [icon (room-icon room)
+        size (icon-size icon)
+        tile-index (icon-tile-index icon)]
+    {:key (blueprint-key room)
+     :name (room-name room)
+     :icon-size size
+     :icon-size-key (icon-size-key icon)
+     :tile-index tile-index
+     :is-composite (icon-is-composite? icon)
+     :inner-class (when (nil? tile-index) (icon-inner-class-name icon))}))
 
 ;; ============================================
 ;; Data Conversion
