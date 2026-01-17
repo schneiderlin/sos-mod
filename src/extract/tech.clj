@@ -10,10 +10,8 @@
    "
   (:require
    [game.tech :as tech]
-   [clojure.java.io :as io]
-   [clojure.edn :as edn])
-  (:import
-   [java.io File]))
+   [extract.common :as common]
+   [clojure.string]))
 
 ;; ============================================
 ;; Configuration
@@ -71,30 +69,6 @@
    :trees (extract-all-trees)
    :techs (extract-all-techs)})
 
-;; ============================================
-;; File Output
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Individual Exports
@@ -106,7 +80,7 @@
   ([output-dir]
    (let [data (build-technologies-data)
          path (str output-dir "/technologies.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-trees-only
@@ -117,7 +91,7 @@
                :extracted-at (str (java.time.Instant/now))
                :trees (tech/all-trees-as-maps)}
          path (str output-dir "/tech-trees.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 ;; ============================================

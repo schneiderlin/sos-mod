@@ -19,10 +19,8 @@
    "
   (:require
    [game.type :as typ]
-   [clojure.java.io :as io]
-   [clojure.edn :as edn])
-  (:import
-   [java.io File]))
+   [extract.common :as common]
+   [clojure.string]))
 
 ;; ============================================
 ;; Configuration
@@ -30,30 +28,6 @@
 
 (def ^:dynamic *output-dir* "output/wiki")
 
-;; ============================================
-;; File Output Utilities
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Terrain Extraction
@@ -244,7 +218,7 @@
   ([output-dir]
    (let [data (build-types-data)
          path (str output-dir "/types.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-types-summary

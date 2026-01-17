@@ -10,10 +10,8 @@
    "
   (:require
    [game.race :as race]
-   [clojure.java.io :as io]
-   [clojure.edn :as edn])
-  (:import
-   [java.io File]))
+   [extract.common :as common]
+   [clojure.string]))
 
 ;; ============================================
 ;; Configuration
@@ -78,30 +76,6 @@
   (build-race-relations-matrix)
   :rcf)
 
-;; ============================================
-;; File Output
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Individual Exports
@@ -113,7 +87,7 @@
   ([output-dir]
    (let [data (build-races-data)
          path (str output-dir "/races.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-race-relations-edn
@@ -122,7 +96,7 @@
   ([output-dir]
    (let [data (build-race-relations-matrix)
          path (str output-dir "/race-relations.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 ;; ============================================

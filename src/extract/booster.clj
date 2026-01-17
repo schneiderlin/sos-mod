@@ -10,10 +10,9 @@
    "
   (:require
    [game.booster :as bo]
+   [extract.common :as common]
    [clojure.string :as str]
-   [clojure.pprint])
-  (:import
-   [java.io File]))
+   [clojure.pprint]))
 
 ;; ============================================
 ;; Configuration
@@ -145,30 +144,6 @@
    :description "Building production and efficiency boosts"
    :boostables (mapv extract-boostable-full (bo/room-boostables))})
 
-;; ============================================
-;; File Output
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Individual Exports
@@ -180,7 +155,7 @@
   ([output-dir]
    (let [data (build-boosters-data)
          path (str output-dir "/boosters.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-categories-only
@@ -191,14 +166,14 @@
                :extracted-at (str (java.time.Instant/now))
                :categories (bo/all-categories-as-maps)}
          path (str output-dir "/booster-categories.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-by-category
   "Extract boostables grouped by category to separate files."
   ([] (extract-by-category (str *output-dir* "/data/boosters")))
   ([output-dir]
-   (ensure-dir output-dir)
+   (common/ensure-dir output-dir)
    (let [exports [["physics.edn" (build-physics-data)]
                   ["battle.edn" (build-battle-data)]
                   ["behaviour.edn" (build-behaviour-data)]
@@ -208,7 +183,7 @@
                   ["rooms.edn" (build-room-data)]]]
      (doseq [[filename data] exports]
        (let [path (str output-dir "/" filename)]
-         (save-edn-pretty data path)))
+         (common/save-edn-pretty data path)))
      (println "Exported" (count exports) "category files to" output-dir))))
 
 ;; ============================================

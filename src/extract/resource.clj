@@ -10,11 +10,7 @@
    "
   (:require
    [game.resource :as res]
-   [game.sprite :as sprite]
-   [clojure.java.io :as io]
-   [clojure.edn :as edn])
-  (:import
-   [java.io File]))
+   [extract.common :as common]))
 
 ;; ============================================
 ;; Configuration
@@ -71,30 +67,6 @@
    :edibles (res/all-edibles-as-maps)
    :drinkables (res/all-drinks-as-maps)})
 
-;; ============================================
-;; File Output
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Sprite Export
@@ -103,7 +75,7 @@
 (defn export-resource-icons
   "Export all resource icons.
    Note: Resource icons come from sprite sheets, need icon extraction support."
-  [output-dir]
+  [_output-dir]
   ;; TODO: Implement when icon extraction is ready
   ;; Resource icons are from init.sprite.UI.Icons
   (println "Resource icon export not yet implemented"))
@@ -118,7 +90,7 @@
   ([output-dir]
    (let [data (build-resources-data)
          path (str output-dir "/resources.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-resources-summary

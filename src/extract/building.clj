@@ -10,9 +10,8 @@
    "
   (:require
    [game.building :as build]
-   [clojure.pprint])
-  (:import
-   [java.io File]))
+   [extract.common :as common]
+   [clojure.pprint]))
 
 ;; ============================================
 ;; Configuration
@@ -93,30 +92,6 @@
    :summary {:total-production-rooms (count (build/production-rooms))}
    :rooms (extract-production-rooms)})
 
-;; ============================================
-;; File Output
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Individual Exports
@@ -128,7 +103,7 @@
   ([output-dir]
    (let [data (build-buildings-data)
          path (str output-dir "/buildings.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-production-edn
@@ -137,7 +112,7 @@
   ([output-dir]
    (let [data (build-production-data)
          path (str output-dir "/production.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 ;; ============================================

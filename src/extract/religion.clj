@@ -10,9 +10,7 @@
    "
   (:require
    [game.religion :as rel]
-   [clojure.java.io :as io])
-  (:import
-   [java.io File]))
+   [extract.common :as common]))
 
 ;; ============================================
 ;; Configuration
@@ -56,30 +54,6 @@
    :religions (extract-all-religions)
    :opposition-matrix (rel/get-opposition-matrix)})
 
-;; ============================================
-;; File Output
-;; ============================================
-
-(defn ensure-dir
-  "Ensure directory exists."
-  [path]
-  (let [dir (File. path)]
-    (when-not (.exists dir)
-      (.mkdirs dir))))
-
-(defn save-edn
-  "Save data as EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (pr-str data))
-  (println "Saved:" path))
-
-(defn save-edn-pretty
-  "Save data as pretty-printed EDN file."
-  [data path]
-  (ensure-dir (.getParent (File. path)))
-  (spit path (with-out-str (clojure.pprint/pprint data)))
-  (println "Saved:" path))
 
 ;; ============================================
 ;; Individual Exports
@@ -91,7 +65,7 @@
   ([output-dir]
    (let [data (build-religions-data)
          path (str output-dir "/religions.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 (defn extract-opposition-matrix
@@ -102,7 +76,7 @@
                :extracted-at (str (java.time.Instant/now))
                :opposition-matrix (rel/get-opposition-matrix)}
          path (str output-dir "/religion-opposition.edn")]
-     (save-edn-pretty data path)
+     (common/save-edn-pretty data path)
      data)))
 
 ;; ============================================
