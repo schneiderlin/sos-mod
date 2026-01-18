@@ -37,7 +37,7 @@
 (defn extract-all-races
   "Extract all races with full data."
   []
-  (mapv extract-race-full (race/all-races)))
+  (mapv extract-race-full (vec (race/all-races))))
 
 (comment
   (extract-all-races)
@@ -46,7 +46,7 @@
 (defn extract-playable-races
   "Extract only playable races."
   []
-  (mapv extract-race-full (race/playable-races)))
+  (mapv extract-race-full (vec (race/playable-races))))
 
 ;; ============================================
 ;; Aggregate Data Structure
