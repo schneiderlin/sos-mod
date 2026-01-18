@@ -96,6 +96,37 @@
         crates (.crates tally)]
     (.get crates resource warehouse)))
 
+;; Get amount of a specific resource in a warehouse
+(defn amount-for-resource
+  "Get the current amount of a resource stored in a warehouse.
+   Returns the actual quantity stored (not crate count)."
+  [warehouse resource]
+  (let [tally (get-stockpile-tally)
+        amount (.amount tally)]
+    (.get amount resource warehouse)))
+
+;; Get total amount of a resource across all warehouses
+(defn total-amount-for-resource
+  "Get the total amount of a resource stored across all warehouses.
+   resource: RESOURCE object (e.g., (RESOURCES/WOOD))"
+  [resource]
+  (let [tally (get-stockpile-tally)
+        amount (.amount tally)
+        warehouses (all-warehouses)]
+    (reduce + 0
+            (map (fn [warehouse]
+                   (.get amount resource warehouse))
+                 warehouses))))
+
+;; Get total amount of a resource by resource key (string)
+(defn total-amount-for-resource-key
+  "Get the total amount of a resource stored across all warehouses.
+   resource-key: string key (e.g., \"_WOOD\", \"BREAD\")"
+  [resource-key]
+  (if-let [resource (.get (RESOURCES/map) resource-key nil)]
+    (total-amount-for-resource resource)
+    (throw (Exception. (str "Resource not found: " resource-key)))))
+
 (comment
   (crates-for-resource warehouse (RESOURCES/WOOD))
   :rcf)
@@ -342,6 +373,18 @@
   ;; Get crates for a specific resource in one warehouse
   (crates-for-resource warehouse (RESOURCES/WOOD))
   (crates-for-resource warehouse (RESOURCES/STONE))
+  
+  ;; Get amount of a resource in one warehouse
+  (amount-for-resource warehouse (RESOURCES/WOOD))
+  (amount-for-resource warehouse (RESOURCES/STONE))
+  
+  ;; Get total amount of a resource across ALL warehouses
+  (total-amount-for-resource (RESOURCES/WOOD))  ; Total wood in all warehouses
+  (total-amount-for-resource (RESOURCES/STONE)) ; Total stone in all warehouses
+  
+  ;; Get total amount by resource key (string)
+  (total-amount-for-resource-key "_WOOD")  ; Total wood
+  (total-amount-for-resource-key "BREAD")  ; Total bread
   
   ;; Get crates for all materials in one warehouse (as resource objects)
   (crates-by-material warehouse)

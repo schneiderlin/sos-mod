@@ -111,8 +111,35 @@
       (animal-resources))
   :rcf)
 
-;; Mark a single animal for hunting. Returns true if successful.
-(defn mark-animal-for-hunt [animal]
+;; Get all animals within radius tiles of the given tile coordinate.
+;; Returns a list of Animal objects.
+(defn animals-in-area
+  "Get all animals within radius tiles of the given tile coordinate.
+   Returns a list of Animal objects (both wild and domesticated)."
+  [tx ty radius]
+  (let [all-animals (all-animals)]
+    (filter
+     (fn [animal]
+       (when (instance? Animal animal)
+         (let [atx (.x (.tileC (.physics animal)))
+               aty (.y (.tileC (.physics animal)))
+               ;; Calculate Euclidean distance in tile space
+               dx (- atx tx)
+               dy (- aty ty)
+               tile-distance (Math/sqrt (+ (* dx dx) (* dy dy)))]
+           (<= tile-distance radius))))
+     all-animals)))
+
+(comment
+  ;; Get all animals in area
+  (animals-in-area 336 190 10)
+  ;; Get only wild animals in area
+  (filter #(not (.domesticated %)) (animals-in-area 336 190 10))
+  :rcf)
+
+(defn hunt-animal
+  "Mark a single animal for hunting. Returns true if successful."
+  [animal]
   (when (and (instance? Animal animal)
              (.huntMarkedCan animal))
     (utils/update-once
@@ -122,11 +149,13 @@
 
 (comment
   (-> (animals-at-tile 218 252)
-      (mark-animal-for-hunt))
+      (hunt-animal))
   :rcf)
 
 ;; Unmark an animal from hunting. Returns true if successful.
-(defn unmark-animal-from-hunt [animal]
+(defn unmark-hunt-animal 
+  "Unmark an animal from hunting. Returns true if successful."
+  [animal]
   (when (and (instance? Animal animal)
              (.huntMarkedIs animal))
     (utils/update-once
@@ -136,34 +165,7 @@
 
 (comment
   (-> (animals-at-tile 218 252)
-      (unmark-animal-from-hunt))
-  :rcf)
-
-;; Mark all wild animals within radius tiles of the given tile for hunting.
-;; Returns count of animals marked.
-(defn hunt-animals-in-area [tx ty radius]
-  (let [all-animals (all-animals)
-        in-range (filter
-                  (fn [animal]
-                    (when (instance? Animal animal)
-                      (let [atx (.x (.tileC (.physics animal)))
-                            aty (.y (.tileC (.physics animal)))
-                            ;; Calculate Euclidean distance in tile space
-                            dx (- atx tx)
-                            dy (- aty ty)
-                            tile-distance (Math/sqrt (+ (* dx dx) (* dy dy)))]
-                        (and (not (.domesticated animal))
-                             (<= tile-distance radius)
-                             (.huntMarkedCan animal)))))
-                  all-animals)] 
-    (utils/update-once
-     (fn [_ds]
-       (doseq [animal in-range]
-         (.huntMark animal true))))
-    (count in-range)))
-
-(comment
-  (hunt-animals-in-area 336 190 10)
+      (unmark-hunt-animal))
   :rcf)
 
 ;; Find the nearest wild animal to the given tile coordinates.
@@ -209,8 +211,13 @@
   (species-info first-animal)
   (animal-resources first-animal)
   
-  ;; Mark animals near a location
-  (hunt-animals-in-area 50 50 10)
+  ;; Mark animals near a location (example: mark all wild animals in area)
+  (let [wild-in-area (->> (animals-in-area 50 50 10)
+                          (filter #(not (.domesticated %)))
+                          (filter #(.huntMarkedCan %)))]
+    (doseq [animal wild-in-area]
+      (hunt-animal animal))
+    (count wild-in-area))
   
   ;; Find nearest animal
   (find-nearest-wild-animal 50 50)
