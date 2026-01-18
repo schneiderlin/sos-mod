@@ -1,0 +1,518 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SOS Wiki IR Schema",
+  "description": "Schema for SOS Game Intermediate Representation data used for wiki editing",
+  "type": "object",
+  "properties": {
+    "races": {
+      "type": "object",
+      "description": "Race data from races.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "names": {"type": "string"},
+            "possessive": {"type": "string"},
+            "possessives": {"type": "string"},
+            "index": {"type": "number"},
+            "playable": {"type": "boolean"},
+            "appearance-types": {"type": "number"},
+            "description": {"type": "string"},
+            "description-long": {"type": "string"},
+            "pros": {"type": "array", "items": {"type": "string"}},
+            "cons": {"type": "array", "items": {"type": "string"}},
+            "challenge": {"type": "string"},
+            "icon-path": {"type": "string"},
+            "sheet-path": {"type": "string"},
+            "lay-path": {"type": "string"},
+            "boosts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "boostable-key": {"type": "string"},
+                  "boostable-name": {"type": "string"},
+                  "is-mul": {"type": "boolean"},
+                  "from": {"type": "number"},
+                  "to": {"type": "number"}
+                },
+                "required": ["boostable-key", "boostable-name", "is-mul", "from", "to"]
+              }
+            },
+            "preferences": {
+              "type": "object",
+              "properties": {
+                "preferred-foods": {"type": "array", "items": {"type": "string"}},
+                "preferred-drinks": {"type": "array", "items": {"type": "string"}},
+                "most-hated-race": {"type": "string"},
+                "race-relations": {"type": "object"}
+              }
+            },
+            "physics": {
+              "type": "object",
+              "properties": {
+                "height": {"type": "number"},
+                "hitbox-size": {"type": "number"},
+                "adult-at-day": {"type": "number"},
+                "corpse-decays": {"type": "boolean"},
+                "sleeps": {"type": "boolean"},
+                "slave-price": {"type": "number"},
+                "raiding-value": {"type": "number"}
+              }
+            },
+            "population": {
+              "type": "object",
+              "properties": {
+                "growth": {"type": "number"},
+                "max": {"type": "number"},
+                "immigration-rate": {"type": "number"},
+                "climate-preferences": {"type": "object"},
+                "terrain-preferences": {"type": "object"}
+              }
+            }
+          },
+          "required": ["key", "name", "index", "playable"]
+        }
+      }
+    },
+    "buildings": {
+      "type": "object",
+      "description": "Building data from buildings.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "index": {"type": "number"},
+            "type": {"type": "string"},
+            "type-index": {"type": "number"},
+            "description": {"type": "string"},
+            "is-production-room": {"type": "boolean"},
+            "degrade-rate": {"type": "number"},
+            "has-bonus": {"type": "boolean"},
+            "icon-path": {"type": "string"},
+            "category": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "main-name": {"type": "string"},
+                "room-count": {"type": "number"}
+              }
+            },
+            "construction": {
+              "type": "object",
+              "properties": {
+                "uses-area": {"type": "boolean"},
+                "must-be-indoors": {"type": "boolean"},
+                "must-be-outdoors": {"type": "boolean"},
+                "resources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "resource-key": {"type": "string"},
+                      "area-cost": {"type": "number"}
+                    }
+                  }
+                },
+                "stats-count": {"type": "number"}
+              }
+            },
+            "industries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "index": {"type": "number"},
+                  "ai-multiplier": {"type": "number"},
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "resource-key": {"type": "string"},
+                        "rate-per-second": {"type": "number"}
+                      }
+                    }
+                  },
+                  "outputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "resource-key": {"type": "string"},
+                        "rate-per-second": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": ["key", "name", "index", "description"]
+        }
+      }
+    },
+    "technologies": {
+      "type": "object",
+      "description": "Technology data from technologies.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "index": {"type": "number"},
+            "tree-key": {"type": "string"},
+            "description": {"type": "string"},
+            "level-max": {"type": "number"},
+            "cost-total": {"type": "number"},
+            "level-cost-inc": {"type": "number"},
+            "ai-amount": {"type": "number"},
+            "color": {
+              "type": "object",
+              "properties": {
+                "red": {"type": "number"},
+                "green": {"type": "number"},
+                "blue": {"type": "number"},
+                "hex": {"type": "string"}
+              }
+            },
+            "costs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "currency-name": {"type": "string"},
+                  "currency-index": {"type": "number"},
+                  "amount": {"type": "number"}
+                },
+                "required": ["currency-name", "amount"]
+              }
+            },
+            "requirements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tech-key": {"type": "string"},
+                  "level": {"type": "number"}
+                },
+                "required": ["tech-key", "level"]
+              }
+            }
+          },
+          "required": ["key", "name", "index"]
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "description": "Resource data from resources.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "names": {"type": "string"},
+            "index": {"type": "number"},
+            "description": {"type": "string"},
+            "category": {"type": "number"},
+            "price-mul": {"type": "number"},
+            "price-cap": {"type": "number"},
+            "edible": {"type": "boolean"},
+            "drinkable": {"type": "boolean"},
+            "degrade-speed": {"type": "number"},
+            "icon-path": {"type": "string"},
+            "sprite-path": {"type": "string"}
+          },
+          "required": ["key", "name", "index", "category"]
+        }
+      }
+    },
+    "boosters": {
+      "type": "object",
+      "description": "Booster data from boosters.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "index": {"type": "number"},
+            "description": {"type": "string"},
+            "icon-path": {"type": "string"},
+            "min-value": {"type": "number"},
+            "base-value": {"type": "number"},
+            "types": {"type": "array", "items": {"type": "string"}},
+            "category-prefix": {"type": "string"},
+            "semantic-category": {"type": "string"},
+            "type-mask": {"type": "number"},
+            "category-name": {"type": "string"}
+          },
+          "required": ["key", "name", "index"]
+        }
+      }
+    },
+    "religions": {
+      "type": "object",
+      "description": "Religion data from religions.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "deity": {"type": "string"},
+            "index": {"type": "number"},
+            "description": {"type": "string"},
+            "inclination": {"type": "number"},
+            "color": {
+              "type": "object",
+              "properties": {
+                "red": {"type": "number"},
+                "green": {"type": "number"},
+                "blue": {"type": "number"},
+                "hex": {"type": "string"}
+              }
+            },
+            "icon-path": {"type": "string"},
+            "boosts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "boostable-key": {"type": "string"},
+                  "boostable-name": {"type": "string"},
+                  "is-mul": {"type": "boolean"},
+                  "from": {"type": "number"},
+                  "to": {"type": "number"}
+                }
+              }
+            },
+            "oppositions": {
+              "type": "object",
+              "additionalProperties": {"type": "number"}
+            }
+          },
+          "required": ["key", "name", "index"]
+        }
+      }
+    },
+    "types": {
+      "type": "object",
+      "description": "Type definitions from types.edn",
+      "properties": {
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "basic": {"type": "boolean"},
+              "event": {"type": "number"}
+            },
+            "required": ["key", "name", "index"]
+          }
+        },
+        "htypes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "description": {"type": "string"},
+              "class-key": {"type": "string"},
+              "names": {"type": "string"},
+              "works": {"type": "boolean"},
+              "player": {"type": "boolean"},
+              "visible": {"type": "boolean"},
+              "hostile": {"type": "boolean"}
+            },
+            "required": ["key", "name", "index"]
+          }
+        },
+        "diseases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "description": {"type": "string"},
+              "fatality-rate": {"type": "number"},
+              "infect-rate": {"type": "number"},
+              "incubation-days": {"type": "number"},
+              "length": {"type": "number"},
+              "regular": {"type": "boolean"},
+              "epidemic": {"type": "boolean"}
+            },
+            "required": ["key", "name", "index"]
+          }
+        },
+        "climates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "description": {"type": "string"},
+              "season-change": {"type": "number"},
+              "temp-cold": {"type": "number"},
+              "temp-warm": {"type": "number"},
+              "fertility": {"type": "number"}
+            },
+            "required": ["key", "name", "index"]
+          }
+        },
+        "terrains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "description": {"type": "string"},
+              "world": {"type": "boolean"}
+            },
+            "required": ["key", "name", "index"]
+          }
+        },
+        "hclasses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "description": {"type": "string"},
+              "names": {"type": "string"},
+              "player": {"type": "boolean"}
+            },
+            "required": ["key", "name", "index"]
+          }
+        },
+        "traits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "name": {"type": "string"},
+              "index": {"type": "number"},
+              "description": {"type": "string"},
+              "title": {"type": "string"},
+              "bios": {"type": "array", "items": {"type": "string"}},
+              "disables": {"type": "array", "items": {"type": "string"}}
+            },
+            "required": ["key", "name", "index"]
+          }
+        }
+      }
+    },
+    "production": {
+      "type": "object",
+      "description": "Production room data from production.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "index": {"type": "number"},
+            "description": {"type": "string"},
+            "is-production-room": {"type": "boolean"},
+            "industries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "index": {"type": "number"},
+                  "ai-multiplier": {"type": "number"},
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "resource-key": {"type": "string"},
+                        "rate-per-second": {"type": "number"}
+                      }
+                    }
+                  },
+                  "outputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "resource-key": {"type": "string"},
+                        "rate-per-second": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": ["key", "name", "index"]
+        }
+      }
+    },
+    "structures": {
+      "type": "object",
+      "description": "Structure data from structures.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "key": {"type": "string"},
+            "name": {"type": "string"},
+            "name-wall": {"type": "string"},
+            "name-ceiling": {"type": "string"},
+            "index": {"type": "number"},
+            "description": {"type": "string"},
+            "resource-key": {"type": "string"},
+            "resource-amount": {"type": "number"},
+            "has-resource": {"type": "boolean"},
+            "durability": {"type": "number"},
+            "construct-time": {"type": "number"},
+            "minimap-color": {
+              "type": "object",
+              "properties": {
+                "red": {"type": "number"},
+                "green": {"type": "number"},
+                "blue": {"type": "number"}
+              }
+            },
+            "icon-path": {"type": "string"}
+          },
+          "required": ["key", "name", "index"]
+        }
+      }
+    },
+    "race-relations": {
+      "type": "object",
+      "description": "Race relations data from race-relations.edn",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {"type": "number"}
+          }
+        }
+      }
+    }
+  }
+}
