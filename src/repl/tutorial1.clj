@@ -652,68 +652,169 @@
 (defn get-home-constructor []
   (.constructor (get-home-room)))
 
+;; Find edge tiles around a set of room tiles (for irregular shapes)
+;; Returns a set of [x y] coordinates for tiles that are:
+;; - Outside the room
+;; - Adjacent to the room (8 directions)
+;; Pure function - no side effects
+(defn- find-room-edge-tiles [room-tiles]
+  (let [directions [[-1 -1] [0 -1] [1 -1]
+                    [-1 0]         [1 0]
+                    [-1 1]  [0 1]  [1 1]]
+        edge-tiles (atom #{})]
+    (doseq [[tx ty] room-tiles
+            [dx dy] directions]
+      (let [adj-x (+ tx dx)
+            adj-y (+ ty dy)]
+        ;; If adjacent tile is outside the room, it's an edge tile
+        (when-not (contains? room-tiles [adj-x adj-y])
+          (swap! edge-tiles conj [adj-x adj-y]))))
+    @edge-tiles))
+
+;; Find a single door position for a room
+;; entrance-tiles: tiles marked as noWalls in the furnisher item (preferred door adjacency)
+;; room-tiles: all tiles belonging to the room
+;; Returns a single [x y] coordinate for the door
+;; Pure function - no side effects
+(defn- find-home-door-position [room-tiles entrance-tiles]
+  (let [edge-tiles (find-room-edge-tiles room-tiles)
+        ;; Prefer edge tiles adjacent to entrance tiles
+        ;; Check orthogonal adjacency only for door placement
+        ortho-directions [[0 -1] [0 1] [1 0] [-1 0]]
+        ;; Find edge tiles that are orthogonally adjacent to entrance tiles
+        door-candidates (filter (fn [[ex ey]]
+                                  (some (fn [[dx dy]]
+                                          (contains? entrance-tiles [(+ ex dx) (+ ey dy)]))
+                                        ortho-directions))
+                                edge-tiles)]
+    ;; Return the first candidate (could be improved with better heuristics)
+    (first door-candidates)))
+
+;; Build walls around a room with a single door
+;; room-tiles: set of [x y] coordinates that belong to the room
+;; door-tile: single [x y] coordinate for the door opening
+;; tbuilding: the building material (TBuilding)
+(defn- build-walls-around-room [room-tiles door-tile tbuilding]
+  (let [edge-tiles (find-room-edge-tiles room-tiles)]
+    ;; Build door opening at the single door location
+    (when door-tile
+      (let [[door-x door-y] door-tile]
+        (when (UtilWallPlacability/openingCanBe door-x door-y)
+          (UtilWallPlacability/openingBuild door-x door-y tbuilding))))
+    
+    ;; Build walls on all edge tiles except the door
+    (doseq [[x y] edge-tiles]
+      (when (and (UtilWallPlacability/wallCanBe x y)
+                 (not= [x y] door-tile))
+        (UtilWallPlacability/wallBuild x y tbuilding)))))
+
 ;; Create a home at specified center coordinates
 ;; Parameters:
 ;;   center-x, center-y: Center tile coordinates
-;;   size: Home size (0 = 3x3 small, 1 = 3x5 medium, 2 = 5x6 large)
+;;   home-type: Home type (0 = 3x3 small, 1 = 3x5 medium, 2 = 5x6 large)
+;;   variation: Size variation within type (0 = base, higher = wider homes)
+;;   rotation: Rotation (0-3)
 ;;   upgrade: Upgrade level (default 0)
 ;; Returns: Map with creation result
-(defn create-home [center-x center-y size & {:keys [upgrade material-name] :or {upgrade 0 material-name "WOOD"}}]
+(defn create-home [center-x center-y home-type & {:keys [variation rotation upgrade material-name]
+                                                    :or {variation 0 rotation 0 upgrade 0 material-name "WOOD"}}]
   (let [rooms (SETT/ROOMS)
         home-constructor (get-home-constructor)
         tbuilding (get-building-material material-name)
-        construction-init (ConstructionInit. upgrade home-constructor tbuilding 0 nil)
+
+        ;; Get the correct FurnisherItemGroup for the home type
+        ;; Group 0 = 3x3 homes, Group 1 = 3x5 homes, Group 2 = 5x6 homes
+        furnisher-group (.get (.pgroups home-constructor) home-type)
+
+        ;; Get the FurnisherItem with specified variation and rotation
+        furnisher-item (.item furnisher-group variation rotation)
+
+        ;; Get actual dimensions from the item
+        width (.width furnisher-item)
+        height (.height furnisher-item)
+
+        ;; Calculate start position from center
+        start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))
+
+        ;; Create tmp area
         tmp (.tmpArea rooms "home")
 
-        ;; Size definitions (width x height)
-        sizes {0 [3 3]   ; Small home
-               1 [3 5]   ; Medium home
-               2 [5 6]}  ; Large home
+        ;; Collect room tiles and entrance tiles for wall building
+        room-tiles (atom #{})
+        entrance-tiles (atom #{})]
 
-        [width height] (get sizes size [3 3])
-        start-x (- center-x (quot width 2))
-        start-y (- center-y (quot height 2))]
-
-    ;; Set the building area
+    ;; Set the building area - only tiles where the item has content
     (doseq [y (range height)
             x (range width)]
-      (.set tmp (+ start-x x) (+ start-y y)))
+      (when-let [tile (.get furnisher-item x y)]
+        (let [world-x (+ start-x x)
+              world-y (+ start-y y)]
+          (.set tmp world-x world-y)
+          (swap! room-tiles conj [world-x world-y])
+          ;; Track entrance tiles (noWalls = true) for door position preference
+          (when (.-noWalls tile)
+            (swap! entrance-tiles conj [world-x world-y])))))
 
     ;; Place FurnisherItem in fData BEFORE creating construction (critical!)
-    (let [furnisher-groups (.get (.pgroups home-constructor) 0)
-          furnisher-item (.item furnisher-groups 0 0)]
-      (.itemSet (.fData rooms) start-x start-y furnisher-item (.room tmp)))
+    (.itemSet (.fData rooms) start-x start-y furnisher-item (.room tmp))
 
-    ;; Create the construction site
-    (.createClean (.construction rooms) tmp construction-init)
+    ;; Find a SINGLE door position (using entrance tiles as preference)
+    (let [door-tile (find-home-door-position @room-tiles @entrance-tiles)]
+      ;; Build walls around the room with single door (BEFORE creating construction)
+      (build-walls-around-room @room-tiles door-tile tbuilding))
 
-    ;; Clear temporary area
-    (.clear tmp)
+    ;; Create ConstructionInit with the structure (TBuilding) for walls
+    (let [construction-init (ConstructionInit. upgrade home-constructor tbuilding 0 nil)]
+      ;; Create the construction site
+      (.createClean (.construction rooms) tmp construction-init))
+
+    ;; tmp is cleared by createClean
 
     {:success true
      :center-x center-x
      :center-y center-y
+     :start-x start-x
+     :start-y start-y
      :width width
      :height height
-     :size size
+     :home-type home-type
+     :variation variation
+     :rotation rotation
      :material material-name}))
 
 ;; Create a home using update-once (ensures it happens in a single frame)
-(defn create-home-once [center-x center-y size & {:keys [upgrade material-name] :or {upgrade 0 material-name "WOOD"}}]
+(defn create-home-once [center-x center-y home-type & {:keys [variation rotation upgrade material-name]
+                                                        :or {variation 0 rotation 0 upgrade 0 material-name "WOOD"}}]
   (utils/update-once
    (fn [_ds]
-     (create-home center-x center-y size :upgrade upgrade :material-name material-name))))
+     (create-home center-x center-y home-type
+                  :variation variation
+                  :rotation rotation
+                  :upgrade upgrade
+                  :material-name material-name))))
 
 (comment
   ;; Home creation examples
 
-  ;; Create a small home (3x3) at tile (250, 400)
-  (create-home-once 250 400 0)
+  ;; Home types:
+  ;;   0 = 3x3 small home
+  ;;   1 = 3x5 medium home
+  ;;   2 = 5x6 large home
 
-  ;; Create a medium home (3x5) at tile (260, 400)
-  (create-home-once 260 400 1)
+  ;; Create a small home (3x3, type 0) at tile (290, 400)
+  (create-home-once 290 400 0)
 
-  ;; Create a large home (5x6) at tile (270, 400)
-  (create-home-once 270 400 2)
+  ;; Create a medium home (3x5, type 1) at tile (300, 400)
+  (create-home-once 300 400 1)
+
+  ;; Create a large home (5x6, type 2) at tile (310, 400)
+  (create-home-once 310 400 2)
+
+  ;; Create a rotated small home (rotation 1 = 90 degrees)
+  (create-home-once 320 400 0 :rotation 1)
+
+  ;; Create a wider variation of small home (variation 1 = 2x width)
+  (create-home-once 330 400 0 :variation 1)
 
   :rcf)
