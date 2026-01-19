@@ -79,9 +79,10 @@
 ;; Fertility and Water Checking Functions
 ;; ============================================================================
 
-;; Get soil fertility at a specific tile
-;; Returns a double value (higher is better, typically 0.0 to 1.0+)
-(defn get-fertility [tx ty]
+(defn get-fertility
+  "Get soil fertility at a specific tile.
+   Returns a double value (higher is better, typically 0.0 to 1.0+)"
+  [tx ty]
   (let [ground-map (.. SETT GROUND MAP)
         ground-tile (.get ground-map tx ty)]
     (.-farm ground-tile)))
@@ -90,10 +91,11 @@
   (get-fertility 200 200)
   :rcf)
 
-;; Get average fertility for an area
-;; start-x, start-y: top-left corner
-;; width, height: dimensions
-(defn get-average-fertility [start-x start-y width height]
+(defn get-average-fertility
+  "Get average fertility for an area.
+   start-x, start-y: top-left corner
+   width, height: dimensions"
+  [start-x start-y width height]
   (let [fertilities (atom [])]
     (doseq [y (range height)
             x (range width)]
@@ -109,9 +111,10 @@
   (get-average-fertility 200 200 10 10)
   :rcf)
 
-;; Check if a tile has water access (for irrigation)
-;; Returns true if the tile has water nearby
-(defn has-water-access? [tx ty]
+(defn has-water-access?
+  "Check if a tile has water access (for irrigation).
+   Returns true if the tile has water nearby."
+  [tx ty]
   (let [moisture-current (.. SETT GROUND MOISTURE_CURRENT)
         moisture (.get moisture-current tx ty)]
     (> moisture 0.0)))
@@ -120,9 +123,10 @@
   (has-water-access? 200 200)
   :rcf)
 
-;; Check if an area has water access
-;; Returns the percentage of tiles with water access
-(defn get-water-access-percentage [start-x start-y width height]
+(defn get-water-access-percentage
+  "Check what percentage of tiles in an area have water access.
+   Returns the percentage of tiles with water access (0.0 to 1.0)."
+  [start-x start-y width height]
   (let [total-tiles (* width height)
         water-tiles (atom 0)]
     (doseq [y (range height)
@@ -232,7 +236,7 @@
   (get-farm-by-key "FARM_GRAIN")
 
   ;; Create a vegetable farm (default behavior)
-  (create-farm-once 200 200 10 10)
+  (create-farm-once 282 356 18 18 :farm-type (get-vegetable-farm))
 
   ;; Create a cotton farm explicitly
   (create-farm-once 250 250 15 15 :farm-type (get-cotton-farm))

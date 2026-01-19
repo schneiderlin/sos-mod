@@ -67,3 +67,39 @@
        :get-result (try (.get minerals tx ty) (catch Exception e {:error (.getMessage e)}))})
     (catch Exception e
       {:error (.getMessage e)})))
+
+(defn get-construction-blueprint
+  "Get the construction blueprint from the settlement.
+   Returns the ConstructionBlueprint which has get(tx, ty) method.
+   Uses reflection because the 'construction' field is private."
+  []
+  (let [constructions (.construction (SETT/ROOMS))
+        field (.getDeclaredField (class constructions) "construction")]
+    (.setAccessible field true)
+    (.get field constructions)))
+
+(comment
+  (get-construction-blueprint)
+  :rcf)
+
+(defn construction-at-tile
+  "Get construction instance at a specific tile coordinate.
+   Returns nil if no construction exists at that tile."
+  [tx ty]
+  (let [blueprint (get-construction-blueprint)]
+    (.get blueprint tx ty)))
+
+(defn has-construction?
+  "Check if a tile has a construction site."
+  [tx ty]
+  (some? (construction-at-tile tx ty)))
+
+(defn constructions-in-area
+  "Find all tiles with construction sites in an area.
+   Returns a list of tile coordinates and their construction instances."
+  [start-x start-y width height]
+  (for [x (range start-x (+ start-x width))
+        y (range start-y (+ start-y height))
+        :when (has-construction? x y)]
+    {:tile [x y]
+     :construction (construction-at-tile x y)}))

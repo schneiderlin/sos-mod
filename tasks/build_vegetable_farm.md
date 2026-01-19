@@ -102,7 +102,8 @@ Build a vegetable farm with capacity for 5 farmers, with 8x8 tiles per farmer, o
    - Verify final farm instance exists
 
 ## Technical Notes
-- nREPL port: 6118 (current, but tmpArea is locked)
+- nREPL port: 41072 (current, in sos-cn directory)
+- Previous nREPL port: 6118 (sos-mod directory, tmpArea was locked)
 - Farm functions available in `game.farm` namespace
 - Planning functions available in `play.plan-building` namespace:
   - `evaluate-farm-location` - Comprehensive location analysis
@@ -111,7 +112,7 @@ Build a vegetable farm with capacity for 5 farmers, with 8x8 tiles per farmer, o
   - `has-water-access?` - Check if tile has water/irrigation
   - `get-average-fertility` - Average fertility for an area
   - `get-water-access-percentage` - Percentage of tiles with water
-  - `area-is-clear?` - Check if area has obstructions
+  - `area-is-clear?` - Check if area has obstructions (**WARNING: May give false positives!**)
   - `get-area-obstructions` - Get detailed obstruction info
   - `calculate-farm-size` - Calculate dimensions for N farmers
 - **CRITICAL**: Use `create-farm-once` for single-frame execution - do NOT manually manipulate tmpArea
@@ -172,11 +173,31 @@ After discovering an 18x18 construction site at (276, 356) top-left:
 - **ROOT CAUSE**: Canceling the construction didn't properly clean up tmpArea state
 - **STATUS**: tmpArea is in unrecoverable state - requires FULL GAME RESTART
 
-### Step 4 Subtasks (Retry #3 - 2026-01-19)
-- [x] **4.1**: Identified wrong farm type (cotton instead of vegetable)
-- [x] **4.2**: Successfully canceled incorrect cotton farm construction
-- [x] **4.3**: Attempted to create correct vegetable farm (Failed - tmpArea locked after cancel)
-- [ ] **4.4**: FULL GAME RESTART required to clear tmpArea
-- [ ] **4.5**: Create vegetable farm (FARM_VEG) at (285, 365)
-- [ ] **4.6**: Monitor construction progress
-- [ ] **4.7**: Verify 5 farmers can work at the farm
+### Error 5: False positive area check on new nREPL port (2026-01-19)
+Connected to nREPL on port 41072 (different game instance in sos-cn directory):
+- Verified 0 existing farms
+- `area-is-clear?` returned `true` for (285, 365) → **FALSE POSITIVE**
+- User confirms obstruction is still visible at the location
+- `create-farm-once` returned `true` but no farms were created
+- Same tmpArea lock error occurred
+
+**Key Findings**:
+- `area-is-clear?` is not reliable for detecting existing blueprints/constructions
+- Need to use alternative methods to detect obstructions (e.g., scanning for furniture/constructions directly)
+- The obstruction at (285, 365) needs to be found and cleared before creating a new farm
+
+### Step 4 Subtasks (Retry #4 - 2026-01-19)
+- [x] **4.1**: Connected to nREPL on port 41072 (sos-cn directory, not sos-mod)
+- [x] **4.2**: Verified 0 existing farms in game
+- [x] **4.3**: Checked target area with `play.plan-building/area-is-clear?` → returned `true` (FALSE POSITIVE)
+- [x] **4.4**: Attempted to create vegetable farm with `create-farm-once` → returned `true`
+- [x] **4.5**: Verified farm instances → 0 farms created
+- [x] **4.6**: Confirmed tmpArea error occurred again
+- [ ] **4.7**: **ACTION REQUIRED**: Find and clear whatever obstruction is at (285, 365)
+- [ ] **4.8**: Try creating farm at a DIFFERENT location or manually clear the obstruction
+
+**Key Findings**:
+- `area-is-clear?` function gives FALSE POSITIVES - it reports area as clear when it's not
+- User confirms obstruction is still visible at the target location
+- Same tmpArea lock issue persists
+- nREPL port changed from 6118 to 41072 (different game instance/project)
