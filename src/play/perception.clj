@@ -2,12 +2,19 @@
   "Game state perception and overview functions for SOS settlement management.
    Provides quick summaries of population, resources, and settlement status.")
 
-(require '[game.settlement :as settlement])
-(require '[game.humanoid :as humanoid])
-(require '[game.warehouse :as warehouse])
-(require '[game.building :as building])
-(require '[game.animal :as animal])
-(import '[init.resources RESOURCES])
+(require '[game.settlement :as settlement]
+         '[game.humanoid :as humanoid]
+         '[game.warehouse :as warehouse]
+         '[game.building :as building]
+         '[game.animal :as animal]
+         '[game.common :refer [array-list->vec array-list-resize->vec]])
+(import '[init.resources RESOURCES]
+        '[settlement.main SETT]
+        '[settlement.stats STATS]
+        '[game.faction FACTIONS]
+        '[init.type HCLASSES]
+        '[init.race RACES]
+        '[init.type NEEDS])
 
 (defn settlement-overview
   "Get a comprehensive overview of the settlement status.
@@ -137,4 +144,188 @@
 
 (comment
   (quick-status)
+  :rcf)
+
+;; ============================================================================
+;; Food Panel Data - UI Food Panel Equivalent
+;; ============================================================================
+
+(defn all-edible-resources
+  "Get all edible resources."
+  []
+  (-> (RESOURCES/EDI)
+      (.all)
+      array-list->vec))
+
+(defn food-production-rate
+  "Get total food production rate per day (sum of all edible resources)."
+  []
+  (let [rooms (SETT/ROOMS)
+        prod (.-PROD rooms)]
+    (reduce + 0.0
+            (map (fn [res-g]
+                   (.produced prod (.resource res-g)))
+                 (all-edible-resources)))))
+
+(comment
+  (food-production-rate)
+  :rcf)
+
+(defn food-consumption-rate
+  "Get total food consumption rate per day.
+   Includes: production consumption (e.g. mills), maintenance, and population hunger."
+  []
+  (let [rooms (SETT/ROOMS)
+        prod (.-PROD rooms)
+        maintenance (SETT/MAINTENANCE)]
+    (reduce + 0.0
+            (concat
+             ;; Production consumption (e.g., mills consuming grain)
+             (map (fn [res-g]
+                    (+ (.consumed prod (.resource res-g))
+                       (.estimateGlobal maintenance (.resource res-g))))
+                  (all-edible-resources))
+             ;; Population hunger consumption
+             (for [hclass (array-list->vec (HCLASSES/ALL))
+                   :when (.player hclass)
+                   race (array-list->vec (RACES/all))]
+               (let [hunger-rate (-> (NEEDS/TYPES)
+                                    .-HUNGER
+                                    .-rate
+                                    (.get (.get hclass race)))
+                     pop-count (-> (STATS/POP)
+                                  .-POP
+                                  (.data hclass)
+                                  (.get race 0))
+                     decree (-> (STATS/FOOD)
+                              .-FOOD
+                              (.decree)
+                              (.get hclass race))]
+                 (* hunger-rate pop-count decree)))))))
+
+(comment
+  (food-consumption-rate)
+  :rcf)
+
+(defn food-storage
+  "Get total food storage across stockpile, eateries, and canteens."
+  []
+  (let [rooms (SETT/ROOMS)
+        stockpile (.-STOCKPILE rooms)
+        tally (.tally stockpile)]
+    (reduce + 0
+            (concat
+             ;; Stockpile
+             (map (fn [res-g]
+                    (.amountTotal tally (.resource res-g)))
+                  (all-edible-resources))
+             ;; Eateries
+             (map (fn [eatery]
+                    (.totalFood eatery))
+                  (array-list->vec (.-EATERIES rooms)))
+             ;; Canteens
+             (map (fn [canteen]
+                    (.totalFood canteen))
+                  (array-list->vec (.-CANTEENS rooms)))))))
+
+(comment
+  (food-storage)
+  :rcf)
+
+(defn food-days-remaining
+  "Get the number of days of food remaining.
+   Returns the actual days remaining (multiplied by dataDivider)."
+  []
+  (let [food-stats (STATS/FOOD)
+        food-days (.-FOOD_DAYS food-stats)
+        food-days-data (.data food-days)]
+    (* (.getD food-days-data nil)
+       (.dataDivider food-days))))
+
+(comment
+  (food-days-remaining)
+  :rcf)
+
+(defn food-status
+  "Get comprehensive food status equivalent to UI food panel.
+   Returns a map with production, consumption, storage, and days remaining."
+  []
+  {:production (food-production-rate)
+   :consumption (food-consumption-rate)
+   :storage (food-storage)
+   :days-remaining (food-days-remaining)
+   :net-rate (- (food-production-rate) (food-consumption-rate))})
+
+(comment
+  (food-status)
+  :rcf)
+
+(defn food-status-by-resource
+  "Get food status breakdown by resource.
+   Returns a map of resource name -> production, consumption, storage."
+  []
+  (let [rooms (SETT/ROOMS)
+        prod (.-PROD rooms)
+        stockpile (.-STOCKPILE rooms)
+        tally (.tally stockpile)]
+    (into {}
+          (map (fn [res-g]
+                 (let [resource (.resource res-g)
+                       name (.toString (.name resource))]
+                   [name
+                    {:production (.produced prod resource)
+                     :consumption (+ (.consumed prod resource)
+                                    (.estimateGlobal (SETT/MAINTENANCE) resource))
+                     :storage (.amountTotal tally resource)
+                     :net (- (.produced prod resource)
+                             (+ (.consumed prod resource)
+                                (.estimateGlobal (SETT/MAINTENANCE) resource)))}]))
+               (all-edible-resources)))))
+
+(comment
+  (food-status-by-resource)
+  :rcf)
+
+(defn print-food-status
+  "Print a human-readable food status equivalent to UI food panel."
+  []
+  (let [status (food-status)
+        by-resource (food-status-by-resource)]
+    (println "=== FOOD STATUS ===")
+    (println)
+    (println "Production Rate:" (format "%.2f" (:production status)) "/day")
+    (println "Consumption Rate:" (format "%.2f" (:consumption status)) "/day")
+    (println "Net Rate:" (format "%.2f" (:net-rate status)) "/day")
+    (println)
+    (println "Total Storage:" (:storage status))
+    (println "Days Remaining:" (format "%.1f" (:days-remaining status)))
+    (println)
+    (println "By Resource:")
+    (doseq [[name info] (sort-by (fn [[n _]] n) by-resource)]
+      (println "  " name ":")
+      (println "    Production:" (format "%.2f" (:production info)))
+      (println "    Consumption:" (format "%.2f" (:consumption info)))
+      (println "    Net:" (format "%.2f" (:net info)))
+      (println "    Storage:" (:storage info)))
+    status))
+
+(comment
+  (print-food-status)
+  :rcf)
+
+(defn food-quick-status
+  "Get a quick one-line food status summary."
+  []
+  (let [status (food-status)
+        days (:days-remaining status)]
+    (str "Food: " (:storage status)
+         " (" (format "%.1f" days) " days"
+         (when (pos? (:net-rate status))
+           (str ", +" (format "%.2f" (:net-rate status)) "/day"))
+         (when (neg? (:net-rate status))
+           (str ", " (format "%.2f" (:net-rate status)) "/day"))
+         ")")))
+
+(comment
+  (food-quick-status)
   :rcf)
