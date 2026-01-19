@@ -3,7 +3,8 @@
     "allow": [
       "Skill(clojure-eval)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(clj-nrepl-eval:*)"
     ]
   }
 }
