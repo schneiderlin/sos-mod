@@ -4,7 +4,8 @@
       "Skill(clojure-eval)",
       "Bash(dir:*)",
       "Bash(findstr:*)",
-      "Bash(clj-nrepl-eval:*)"
+      "Bash(clj-nrepl-eval:*)",
+      "Skill(sos-play)"
     ]
   }
 }
