@@ -1,6 +1,9 @@
 (ns play.perception
   "Game state perception and overview functions for SOS settlement management.
-   Provides quick summaries of population, resources, and settlement status.")
+   Provides quick summaries of population, resources, and settlement status."
+  (:require
+   [game.warehouse :as warehouse]
+   [repl.utils :as utils]))
 
 (require '[game.settlement :as settlement]
          '[game.humanoid :as humanoid]

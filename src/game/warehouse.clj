@@ -455,6 +455,99 @@
   
   ;; Clear all restrictions (allow all materials with default crate size)
   (clear-warehouse-material-restrictions-once warehouse)
-  
+
+  :rcf)
+
+;; ============================================================================
+;; Resource Crate Allocation Management
+;; ============================================================================
+
+(defn ensure-resource-crates
+  "Ensure at least N crates are allocated for a specific resource across warehouses.
+   resource-key: string key (e.g., \"VEGETABLE\", \"WOOD\")
+   min-crates: minimum number of crates to allocate
+   Returns the total number of crates allocated for the resource."
+  [resource-key min-crates]
+  (let [resource (.get (RESOURCES/map) resource-key nil)]
+    (when-not resource
+      (throw (Exception. (str "Resource not found: " resource-key))))
+
+    ;; Calculate current total crates for this resource across all warehouses
+    (let [warehouses (all-warehouses)
+          current-crates (reduce + 0
+                                 (map #(get-crates-allocated-to-resource % resource)
+                                      warehouses))
+          needed-crates (- min-crates current-crates)]
+
+      (if (pos? needed-crates)
+        ;; Allocate additional crates to warehouses
+        (loop [whs warehouses
+               remaining needed-crates
+               allocated 0]
+          (if (or (empty? whs) (zero? remaining))
+            (+ current-crates allocated)
+            (let [w (first whs)
+                  ;; Calculate available crates (total - currently allocated)
+                  total-crates (int (utils/invoke-method w "totalCrates"))
+                  current-alloc (get-crates-allocated-to-resource w resource)
+                  currently-allocated-total (reduce + 0
+                                                     (map #(get-crates-allocated-to-resource w %)
+                                                          (all-resources)))
+                  available-crates (- total-crates currently-allocated-total)
+                  to-allocate (min remaining available-crates)]
+              (when (pos? to-allocate)
+                (allocate-crates-to-resource-once w resource (+ current-alloc to-allocate)))
+              (recur (rest whs)
+                     (- remaining to-allocate)
+                     (+ allocated to-allocate)))))
+        current-crates))))
+
+(comment
+  (ensure-resource-crates "VEGETABLE" 3)
+  (ensure-resource-crates "WOOD" 5)
+  :rcf)
+
+(defn get-resource-crate-status
+  "Get current crate allocation status for a specific resource across all warehouses.
+   resource-key: string key (e.g., \"VEGETABLE\", \"WOOD\")
+   Returns a map with total crates and breakdown by warehouse."
+  [resource-key]
+  (let [resource (.get (RESOURCES/map) resource-key nil)]
+    (when-not resource
+      (throw (Exception. (str "Resource not found: " resource-key))))
+
+    (let [warehouses (all-warehouses)]
+      {:total-crates (reduce + 0
+                             (map #(get-crates-allocated-to-resource % resource)
+                                  warehouses))
+       :by-warehouse (mapv (fn [w]
+                            {:warehouse (warehouse-info w)
+                             :crates (get-crates-allocated-to-resource w resource)})
+                          warehouses)})))
+
+(comment
+  (get-resource-crate-status "VEGETABLE")
+  (get-resource-crate-status "WOOD")
+  :rcf)
+
+;; Convenience function for vegetables
+(defn ensure-vegetable-crates
+  "Ensure at least 3 crates are allocated for vegetables across warehouses.
+   Returns the total number of vegetable crates allocated."
+  []
+  (ensure-resource-crates "VEGETABLE" 3))
+
+(comment
+  (ensure-vegetable-crates)
+  :rcf)
+
+(defn get-vegetable-crate-status
+  "Get current vegetable crate allocation status across all warehouses.
+   Returns a map with total crates and breakdown by warehouse."
+  []
+  (get-resource-crate-status "VEGETABLE"))
+
+(comment
+  (get-vegetable-crate-status)
   :rcf)
 
