@@ -1,14 +1,14 @@
 (ns repl.tutorial1
   (:require
    [repl.utils :as utils]
-   [game.common :refer [get-building-material]])
+   [game.common :refer [get-building-material]]
+   [game.throne :as throne])
   (:import
    [game GAME]
    [view.main VIEW]
    [settlement.main SETT]
    [settlement.room.main.construction ConstructionInit]
-   [settlement.room.main.placement UtilWallPlacability]
-   [settlement.room.main.throne THRONE]))
+   [settlement.room.main.placement UtilWallPlacability]))
 
 ;; Get the game window for camera control
 (defn get-game-window []
@@ -439,18 +439,9 @@
   
   :rcf)
 
-;; Move camera to the throne position
-;; Gets the throne's coordinate (in tiles) and moves the camera to center on it
-(defn move-to-throne []
-  (let [throne-coo (THRONE/coo)
-        window (get-game-window)
-        tile-x (.x throne-coo)
-        tile-y (.y throne-coo)]
-    (.centerAtTile window tile-x tile-y)))
-
 (comment
   ;; Move camera to throne
-  (move-to-throne)
+  (throne/move-to-throne)
   :rcf)
 
 ;; ============================================================================

@@ -1,4 +1,5 @@
 (ns game.humanoid
+  (:require [game.settlement :as settlement])
   (:import
    [game GAME]
    [view.main VIEW]
@@ -8,16 +9,6 @@
    [settlement.room.main.construction ConstructionInit]
    [settlement.room.main.placement UtilWallPlacability]
    [settlement.room.main.placement PLACEMENT]))
-
-(defn all-entities []
-  (let [entities-instance (SETT/ENTITIES)
-        entities (.getAllEnts entities-instance)
-        non-nil-entities (filter #(not (nil? %)) entities)]
-    non-nil-entities))
-
-(comment
-  (all-entities)
-  :rcf)
 
 (defn humanoid-info [entity]
   (when (instance? Humanoid entity)
@@ -48,9 +39,9 @@
        :class (.toString (.clas induvidual))})))
 
 (comment
-  (humanoid-info (first (all-entities)))
+  (humanoid-info (first (settlement/all-entities)))
 
-  (def entities (all-entities))
+  (def entities (settlement/all-entities))
 
   ;; 9 个猪人小孩
   ;; 36 个人类小孩
@@ -70,12 +61,12 @@
        (keep identity)
        (map :friend)
        (keep identity)
-       count) 
+       count)
   :rcf)
 
 (defn friendship-edn []
   (let [stats-appearance (STATS/APPEARANCE)
-        humanoids (->> (all-entities)
+        humanoids (->> (settlement/all-entities)
                        (map humanoid-info)
                        (keep identity))
         ;; Get all names including friends
