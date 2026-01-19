@@ -9,7 +9,8 @@
 (require '[game.animal :as animal])
 (require '[game.throne :as throne])
 (import '[init.resources RESOURCES]
-        '[settlement.main SETT])
+        '[settlement.main SETT]
+        '[settlement.stats STATS])
 
 (defn settlement-overview
   "Get a comprehensive overview of the settlement status.
@@ -244,8 +245,9 @@
 ;; Furniture Item Inspection
 ;; ============================================================================
 
-(defn get-furniture-data []
+(defn get-furniture-data
   "Get the furniture data instance from the settlement."
+  []
   (let [rooms (SETT/ROOMS)]
     (.fData rooms)))
 
@@ -291,5 +293,303 @@
   ;; Count furniture in area
   (count (furniture-items-in-area 300 550 50 50))
 
+  :rcf)
+
+;; ============================================================================
+;; Ground/Tile Resource Investigation
+;; ============================================================================
+
+(defn get-ground-tile
+  "Get ground tile data at a specific coordinate.
+   The GROUND.MAP holds terrain data including resources on ground."
+  [tx ty]
+  (let [ground-map (.. SETT GROUND MAP)]
+    (.get ground-map tx ty)))
+
+(comment
+  (get-ground-tile 325 578)
+  :rcf)
+
+
+(defn explore-ground-tile
+  "Explore all available data from a ground tile.
+   Returns a map of field names to values."
+  [tx ty]
+  (let [tile (get-ground-tile tx ty)]
+    (when tile
+      (try
+        {:tile-class (str (class tile))
+         ;; Known fields from farm.clj
+         :farm-fertility (try (.-farm tile) (catch Exception _ nil))
+         ;; Try to explore other fields
+         :bean (try (bean tile) (catch Exception _ nil))}
+        (catch Exception e
+          {:error (.getMessage e)})))))
+
+(defn get-tally-global-amount
+  "Try to get global resource amount from tally (not per-warehouse).
+   The tally might have global accessors."
+  [resource]
+  (let [tally (warehouse/get-stockpile-tally)
+        amount (.amount tally)]
+    ;; Try to get total amount across all warehouses
+    (try
+      ;; Method 1: Try calling .total or similar
+      (let [warehouses (warehouse/all-warehouses)]
+        (if (empty? warehouses)
+          ;; No warehouses - try to find global storage
+          {:warehouses 0
+           :try-global (try (.get amount resource nil) (catch Exception e {:error (.getMessage e)}))}
+          ;; Sum across warehouses
+          {:warehouses (count warehouses)
+           :total-in-warehouses (reduce + 0 (map #(.get amount resource %) warehouses))}))
+      (catch Exception e
+        {:error (.getMessage e)}))))
+
+(defn explore-sett-structure
+  "Explore the SETT class to find resource-related fields/methods.
+   This helps discover how ground items might be stored."
+  []
+  (let [sett-class (class SETT)]
+    {:class-name (.getName sett-class)
+     ;; List all public static fields
+     :static-methods (->> (.getMethods sett-class)
+                          (filter #(java.lang.reflect.Modifier/isStatic (.getModifiers %)))
+                          (map #(.getName %))
+                          (take 50))
+     ;; List all public fields  
+     :static-fields (->> (.getFields sett-class)
+                         (filter #(java.lang.reflect.Modifier/isStatic (.getModifiers %)))
+                         (map #(.getName %))
+                         (take 50))}))
+
+(defn list-all-entity-classes-in-area
+  "List all unique entity class types in an area.
+   This helps identify what kinds of entities exist (humanoids, animals, items, etc.)."
+  [start-x start-y width height]
+  (let [entities (entities-in-area start-x start-y width height)]
+    {:count (count entities)
+     :classes (->> entities
+                   (map #(str (class %)))
+                   (frequencies))}))
+
+(defn explore-tile-deeply
+  "Deep exploration of a specific tile to find all data layers."
+  [tx ty]
+  {:tile [tx ty]
+   :entities (entities-at-tile tx ty)
+   :furniture (get-furniture-item tx ty)
+   :ground-tile (explore-ground-tile tx ty)})
+
+(defn explore-things
+  "Explore SETT.THINGS() - may contain loose items/objects on ground."
+  []
+  (try
+    (let [things (SETT/THINGS)]
+      {:class (str (class things))
+       :bean (try (bean things) (catch Exception _ "bean failed"))
+       :methods (->> (.getMethods (class things))
+                     (map #(.getName %))
+                     (filter #(not (.startsWith % "wait")))
+                     (take 30)
+                     (sort))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn explore-tile-map
+  "Explore SETT.TILE_MAP() - may have per-tile resource information."
+  []
+  (try
+    (let [tile-map (SETT/TILE_MAP)]
+      {:class (str (class tile-map))
+       :methods (->> (.getMethods (class tile-map))
+                     (map #(.getName %))
+                     (filter #(not (.startsWith % "wait")))
+                     (take 30)
+                     (sort))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn get-tile-map-data
+  "Get data from TILE_MAP at a specific coordinate."
+  [tx ty]
+  (try
+    (let [tile-map (SETT/TILE_MAP)]
+      {:tile [tx ty]
+       :tile-map-class (str (class tile-map))
+       ;; Try .get method if exists
+       :get-result (try (.get tile-map tx ty) (catch Exception e {:error (.getMessage e)}))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn explore-stats-stored
+  "Explore STATS.STORED() - may track global resource storage."
+  []
+  (try
+    (let [stored (STATS/STORED)]
+      {:class (str (class stored))
+       :methods (->> (.getMethods (class stored))
+                     (map #(.getName %))
+                     (filter #(not (.startsWith % "wait")))
+                     (take 30)
+                     (sort))
+       :bean (try (bean stored) (catch Exception _ "bean failed"))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn get-stored-amount
+  "Get stored amount for a resource from STATS.STORED()."
+  [resource]
+  (try
+    (let [stored (STATS/STORED)]
+      ;; Try different methods to get the amount
+      {:resource-name (str (.name resource))
+       :get-result (try (.get stored resource) (catch Exception e {:error (.getMessage e)}))
+       :getD-result (try (.getD stored resource) (catch Exception e {:error (.getMessage e)}))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn global-resource-amounts
+  "Get global resource amounts for common resources using STATS.STORED()."
+  []
+  {:wood (get-stored-amount (RESOURCES/WOOD))
+   :stone (get-stored-amount (RESOURCES/STONE))
+   :bread (try (get-stored-amount (.get (RESOURCES/map) "BREAD" nil)) (catch Exception _ nil))
+   :meat (try (get-stored-amount (.get (RESOURCES/map) "MEAT" nil)) (catch Exception _ nil))})
+
+(defn explore-tally-totals
+  "Explore tally system to see if there are global totals (not per-warehouse).
+   The tally might have methods to get totals across all storage."
+  []
+  (try
+    (let [tally (warehouse/get-stockpile-tally)
+          wood (RESOURCES/WOOD)]
+      {:tally-class (str (class tally))
+       :methods (->> (.getMethods (class tally))
+                     (map #(.getName %))
+                     (filter #(or (.contains % "otal")
+                                 (.contains % "ll")
+                                 (.contains % "sum")))
+                     (take 20)
+                     (sort))
+       ;; Try getting total without warehouse
+       :try-total-nil (try (.get (.amount tally) wood nil) (catch Exception e {:error (.getMessage e)}))
+       :amount-class (str (class (.amount tally)))
+       :amount-methods (->> (.getMethods (class (.amount tally)))
+                           (map #(.getName %))
+                           (take 20)
+                           (sort))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn explore-halfents
+  "Explore SETT.HALFENTS() - might contain half-entities like items."
+  []
+  (try
+    (let [halfents (SETT/HALFENTS)]
+      {:class (str (class halfents))
+       :methods (->> (.getMethods (class halfents))
+                     (map #(.getName %))
+                     (filter #(not (.startsWith % "wait")))
+                     (take 30)
+                     (sort))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn explore-minerals
+  "Explore SETT.MINERALS() - might have resource deposit info."
+  []
+  (try
+    (let [minerals (SETT/MINERALS)]
+      {:class (str (class minerals))
+       :methods (->> (.getMethods (class minerals))
+                     (map #(.getName %))
+                     (filter #(not (.startsWith % "wait")))
+                     (take 30)
+                     (sort))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn get-minerals-at-tile
+  "Get mineral data at a specific tile."
+  [tx ty]
+  (try
+    (let [minerals (SETT/MINERALS)]
+      {:tile [tx ty]
+       :get-result (try (.get minerals tx ty) (catch Exception e {:error (.getMessage e)}))})
+    (catch Exception e
+      {:error (.getMessage e)})))
+
+(defn comprehensive-tile-scan
+  "Do a comprehensive scan of what's at a tile using ALL known systems."
+  [tx ty]
+  {:tile [tx ty]
+   ;; Entity system
+   :entities (let [ents (entities-at-tile tx ty)]
+               {:count (count (or ents []))
+                :classes (when ents (map #(str (class %)) ents))})
+   ;; Furniture system
+   :furniture (get-furniture-item tx ty)
+   ;; Ground/terrain
+   :ground (explore-ground-tile tx ty)
+   ;; Tile map
+   :tile-map (get-tile-map-data tx ty)
+   ;; Minerals
+   :minerals (get-minerals-at-tile tx ty)})
+
+(comment
+  ;; =====================================================
+  ;; INVESTIGATION: Finding Ground Items
+  ;; Target tile: (325, 578) reportedly has 100 wood
+  ;; =====================================================
+  
+  ;; 1. Explore SETT structure to find resource-related methods
+  (explore-sett-structure)
+  
+  ;; 2. Deep explore the target tile
+  (explore-tile-deeply 325 578)
+  
+  ;; 3. Check ground tile data
+  (explore-ground-tile 325 578)
+  
+  ;; 4. Check global tally for wood
+  (get-tally-global-amount (RESOURCES/WOOD))
+  
+  ;; 5. List all entity classes near throne
+  (let [{:keys [x y]} (throne/throne-position)]
+    (list-all-entity-classes-in-area (- x 10) (- y 10) 20 20))
+  
+  ;; 6. Check specific area around reported wood location
+  (list-all-entity-classes-in-area 320 573 10 10)
+  
+  ;; =====================================================
+  ;; NEW EXPLORATION: THINGS, TILE_MAP, STATS.STORED
+  ;; =====================================================
+  
+  ;; 7. Explore SETT.THINGS() - might contain loose items
+  (explore-things)
+  
+  ;; 8. Explore SETT.TILE_MAP() - per-tile data
+  (explore-tile-map)
+  (get-tile-map-data 325 578)
+  
+  ;; 9. Explore STATS.STORED() - global resource tracking
+  (explore-stats-stored)
+  (get-stored-amount (RESOURCES/WOOD))
+  (global-resource-amounts)
+  
+  ;; 10. Explore tally totals without warehouse
+  (explore-tally-totals)
+  
+  ;; 11. Explore HALFENTS - might have loose items
+  (explore-halfents)
+  
+  ;; 12. Explore MINERALS - resource deposits
+  (explore-minerals)
+  (get-minerals-at-tile 325 578)
+  
+  ;; 13. Comprehensive tile scan - use ALL systems
+  (comprehensive-tile-scan 325 578)
+  
   :rcf)
 
