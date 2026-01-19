@@ -80,8 +80,18 @@ Build a vegetable farm with capacity for 5 farmers, with 8x8 tiles per farmer, o
    - Verify final farm instance exists
 
 ## Technical Notes
-- nREPL port: 49207
+- nREPL port: 49207 (will change after restart)
 - Farm functions available in `game.farm` namespace
+- Planning functions available in `play.plan-building` namespace:
+  - `evaluate-farm-location` - Comprehensive location analysis
+  - `print-location-evaluation` - Human-readable location report
+  - `get-fertility` - Check soil fertility at a tile
+  - `has-water-access?` - Check if tile has water/irrigation
+  - `get-average-fertility` - Average fertility for an area
+  - `get-water-access-percentage` - Percentage of tiles with water
+  - `area-is-clear?` - Check if area has obstructions
+  - `get-area-obstructions` - Get detailed obstruction info
+  - `calculate-farm-size` - Calculate dimensions for N farmers
 - **CRITICAL**: Use `create-farm-once` for single-frame execution - do NOT manually manipulate tmpArea
 - Water access detected via `SETT/GROUND/MOISTURE_CURRENT`
 - Farm creation requires proper tmpArea cleanup between operations
