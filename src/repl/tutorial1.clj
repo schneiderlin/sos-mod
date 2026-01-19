@@ -636,5 +636,84 @@
   ;; Get current speed
   (get-time-speed)                 ; Get actual current speed
   (get-time-speed-target)          ; Get target speed setting
-  
+
+  :rcf)
+
+;; ============================================================================
+;; Home Building Functions
+;; ============================================================================
+
+;; Get the home room blueprint
+(defn get-home-room []
+  (let [rooms (SETT/ROOMS)]
+    (.HOME rooms)))
+
+;; Get the home constructor
+(defn get-home-constructor []
+  (.constructor (get-home-room)))
+
+;; Create a home at specified center coordinates
+;; Parameters:
+;;   center-x, center-y: Center tile coordinates
+;;   size: Home size (0 = 3x3 small, 1 = 3x5 medium, 2 = 5x6 large)
+;;   upgrade: Upgrade level (default 0)
+;; Returns: Map with creation result
+(defn create-home [center-x center-y size & {:keys [upgrade material-name] :or {upgrade 0 material-name "WOOD"}}]
+  (let [rooms (SETT/ROOMS)
+        home-constructor (get-home-constructor)
+        tbuilding (get-building-material material-name)
+        construction-init (ConstructionInit. upgrade home-constructor tbuilding 0 nil)
+        tmp (.tmpArea rooms "home")
+
+        ;; Size definitions (width x height)
+        sizes {0 [3 3]   ; Small home
+               1 [3 5]   ; Medium home
+               2 [5 6]}  ; Large home
+
+        [width height] (get sizes size [3 3])
+        start-x (- center-x (quot width 2))
+        start-y (- center-y (quot height 2))]
+
+    ;; Set the building area
+    (doseq [y (range height)
+            x (range width)]
+      (.set tmp (+ start-x x) (+ start-y y)))
+
+    ;; Place FurnisherItem in fData BEFORE creating construction (critical!)
+    (let [furnisher-groups (.get (.pgroups home-constructor) 0)
+          furnisher-item (.item furnisher-groups 0 0)]
+      (.itemSet (.fData rooms) start-x start-y furnisher-item (.room tmp)))
+
+    ;; Create the construction site
+    (.createClean (.construction rooms) tmp construction-init)
+
+    ;; Clear temporary area
+    (.clear tmp)
+
+    {:success true
+     :center-x center-x
+     :center-y center-y
+     :width width
+     :height height
+     :size size
+     :material material-name}))
+
+;; Create a home using update-once (ensures it happens in a single frame)
+(defn create-home-once [center-x center-y size & {:keys [upgrade material-name] :or {upgrade 0 material-name "WOOD"}}]
+  (utils/update-once
+   (fn [_ds]
+     (create-home center-x center-y size :upgrade upgrade :material-name material-name))))
+
+(comment
+  ;; Home creation examples
+
+  ;; Create a small home (3x3) at tile (250, 400)
+  (create-home-once 250 400 0)
+
+  ;; Create a medium home (3x5) at tile (260, 400)
+  (create-home-once 260 400 1)
+
+  ;; Create a large home (5x6) at tile (270, 400)
+  (create-home-once 270 400 2)
+
   :rcf)
