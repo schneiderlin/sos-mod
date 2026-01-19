@@ -14,10 +14,15 @@
 (import '[init.resources RESOURCES]
         '[settlement.main SETT]
         '[settlement.stats STATS]
+        '[settlement.stats.standing STANDINGS StandingCitizen StandingSlave]
+        '[settlement.stats.colls StatsPopulation StatsFood StatsEnv StatsAccess StatsReligion StatsWork StatsGovern]
+        '[settlement.stats.service StatsService StatServiceRoom]
+        '[settlement.stats.law StatsLaw]
         '[game.faction FACTIONS]
-        '[init.type HCLASSES]
+        '[init.type HCLASSES HTYPES]
         '[init.race RACES]
-        '[init.type NEEDS])
+        '[init.type NEEDS]
+        '[init.type POP_CL])
 
 (defn settlement-overview
   "Get a comprehensive overview of the settlement status.
@@ -332,3 +337,438 @@
 (comment
   (food-quick-status)
   :rcf)
+
+;; ============================================================================
+;; Loyalty and Happiness Stats
+;; ============================================================================
+
+(defn loyalty-status
+  "Get loyalty information for citizens.
+   Returns a map with overall loyalty, target loyalty, and fulfillment."
+  []
+  (let [citizen-standings (STANDINGS/CITIZEN)
+        fulfillment (.-fullfillment citizen-standings)
+        happiness (.-happiness citizen-standings)]
+    {:overall (.current citizen-standings)
+     :target (.target citizen-standings)
+     :fulfillment (into {}
+                        (map (fn [race]
+                               [(.-key race)
+                                (.getD fulfillment race)])
+                             (array-list->vec (RACES/all))))
+     :happiness (into {}
+                      (map (fn [race]
+                             [(.-key race)
+                              (.getD happiness race)])
+                           (array-list->vec (RACES/all))))}))
+
+(comment
+  (loyalty-status)
+  :rcf)
+
+(defn happiness-status
+  "Get happiness metrics for the population.
+   Returns a map with happiness values by race."
+  []
+  (let [citizen-standings (STANDINGS/CITIZEN)
+        happiness (.-happiness citizen-standings)
+        fulfillment (.-fullfillment citizen-standings)]
+    {:by-race (into {}
+                    (map (fn [race]
+                           [(.-key race)
+                            {:happiness (.getD happiness race)
+                             :fulfillment (.getD fulfillment race)}])
+                         (array-list->vec (RACES/all))))}))
+
+(comment
+  (happiness-status)
+  :rcf)
+
+;; ============================================================================
+;; Population Breakdown
+;; ============================================================================
+
+(defn population-breakdown
+  "Get detailed population information by class, race, and type."
+  []
+  (let [pop-stats (STATS/POP)
+        all-hclasses (array-list->vec (HCLASSES/ALL))
+        all-races (array-list->vec (RACES/all))
+        all-htypes [HTYPES/SUBJECT HTYPES/RETIREE HTYPES/RECRUIT HTYPES/STUDENT
+                    HTYPES/PRISONER HTYPES/SLAVE HTYPES/CHILD]]
+    {:by-class (into {}
+                     (map (fn [hclass]
+                            [(.toString (.name hclass))
+                             (into {}
+                                   (map (fn [race]
+                                          [(.-key race)
+                                           (.get (.data (.-POP pop-stats) hclass) race 0)])
+                                        all-races))])
+                          (filter #(.player %) all-hclasses)))
+     :by-race (into {}
+                    (map (fn [race]
+                           [(.-key race)
+                            (.get (.data (.-POP pop-stats) nil) race 0)])
+                         all-races))
+     :by-type (into {}
+                    (map (fn [htype]
+                           [(.-key htype)
+                            (.pop pop-stats htype)])
+                         (map #(%) all-htypes)))
+     :total (.get (.data (.-POP pop-stats) nil) nil 0)
+     :age-stats {:days (.-AGE_DAYS (.-age pop-stats))
+                 :demography (.demography pop-stats)}
+     :status {:trapped (.-TRAPPED pop-stats)
+              :emigrating (.-EMMIGRATING pop-stats)
+              :majority (.-MAJORITY pop-stats)
+              :slaves-self (.-SLAVES_SELF pop-stats)
+              :slaves-other (.-SLAVES_OTHER pop-stats)}}))
+
+(comment
+  (population-breakdown)
+  :rcf)
+
+;; ============================================================================
+;; Service Facilities Coverage
+;; ============================================================================
+
+(defn service-coverage
+  "Get service facility access and coverage information.
+   Returns a map with service stats for all service rooms."
+  []
+  (let [service-stats (STATS/SERVICE)
+        all-services (array-list->vec (.-ROOMS service-stats))
+        all-hclasses (filter #(.player %) (array-list->vec (HCLASSES/ALL)))
+        all-races (array-list->vec (RACES/all))]
+    {:services (into {}
+                     (map (fn [service]
+                            (let [name (.toString (.-name service))
+                                  access-data (.access service)
+                                  upgrade-data (.upgrade service)
+                                  quality-data (.quality service)
+                                  proximity-data (.proximity service)]
+                              [name
+                               {:access (into {}
+                                            (map (fn [hclass]
+                                                   [(.toString (.name hclass))
+                                                    (into {}
+                                                          (map (fn [race]
+                                                                 [(.toString (.-key race))
+                                                                  (.getD (.data access-data hclass) race)])
+                                                               all-races))])
+                                                 all-hclasses))
+                                :upgrade (into {}
+                                             (map (fn [hclass]
+                                                    [(.toString (.name hclass))
+                                                     (into {}
+                                                           (map (fn [race]
+                                                                  [(.toString (.-key race))
+                                                                   (.getD (.data upgrade-data hclass) race)])
+                                                                all-races))])
+                                                  all-hclasses))
+                                :quality (into {}
+                                             (map (fn [hclass]
+                                                    [(.toString (.name hclass))
+                                                     (into {}
+                                                           (map (fn [race]
+                                                                  [(.toString (.-key race))
+                                                                   (.getD (.data quality-data hclass) race)])
+                                                                all-races))])
+                                                  all-hclasses))
+                                :proximity (into {}
+                                               (map (fn [hclass]
+                                                      [(.toString (.name hclass))
+                                                       (into {}
+                                                             (map (fn [race]
+                                                                    [(.toString (.-key race))
+                                                                     (.getD (.data proximity-data hclass) race)])
+                                                                  all-races))])
+                                                    all-hclasses))}]))
+                          all-services))
+     :need-totals (into {}
+                        (map (fn [need]
+                               [(.toString need)
+                                (.needTot service-stats need)])
+                             (array-list->vec (NEEDS/ALL))))}))
+
+(comment
+  (service-coverage)
+  :rcf)
+
+;; ============================================================================
+;; Environment Status
+;; ============================================================================
+
+(defn environment-status
+  "Get environmental impact information including pollution, beauty, etc."
+  []
+  (let [env-stats (STATS/ENV)
+        env-map (.-map (settlement.main.SETT/ENV))
+        access-stats (STATS/ACCESS)
+        access-coll (.ACCESS access-stats)  ; StatsA nested class
+        all-stats (array-list->vec (.all access-coll))  ; List of STAT objects
+        all-hclasses (filter #(.player %) (array-list->vec (HCLASSES/ALL)))
+        all-races (array-list->vec (RACES/all))
+        ;; Helper to get stat by SettEnv field (e.g., NOISE, LIGHT)
+        get-env-stat (fn [sett-env]
+                       (let [env-idx (.index sett-env)]
+                         (.get all-stats env-idx)))]
+    {:preferences {:building (.-BUILDING_PREF env-stats)
+                   :road (.-ROAD_PREF env-stats)
+                   :pool (.-POOL_PREF env-stats)
+                   :climate (.-CLIMATE env-stats)
+                   :others (.-OTHERS env-stats)}
+     :pollution {:cannibalism (.-CANNIBALISM env-stats)
+                 :unburied (.-UNBURRIED env-stats)}
+     :access {:noise (get-env-stat (.-NOISE env-map))
+              :light (get-env-stat (.-LIGHT env-map))
+              :space (get-env-stat (.-SPACE env-map))
+              :water-sweet (get-env-stat (.-WATER_SWEET env-map))
+              :water-salt (get-env-stat (.-WATER_SALT env-map))
+              :urban (get-env-stat (.-URBAN env-map))}
+     :road-access (.-ACCESS_ROAD env-stats)
+     :by-class (into {}
+                     (map (fn [hclass]
+                            [(.toString (.name hclass))
+                             {:building-preference (.getD (.data (.-BUILDING_PREF env-stats) hclass) nil)
+                              :road-access (.getD (.data (.-ACCESS_ROAD env-stats) hclass) nil)
+                              :climate-suitability (.getD (.data (.-CLIMATE env-stats) hclass) nil)}])
+                          all-hclasses))
+     :by-race (into {}
+                    (map (fn [race]
+                           [(.toString (.-key race))
+                            {:building-preference (.getD (.data (.-BUILDING_PREF env-stats) nil) race)
+                             :road-preference (.getD (.data (.-ROAD_PREF env-stats) nil) race)
+                             :pool-preference (.getD (.data (.-POOL_PREF env-stats) nil) race)
+                             :others-preference (.getD (.data (.-OTHERS env-stats) nil) race)}])
+                         all-races))}))
+
+(comment
+  (environment-status)
+  :rcf)
+
+;; ============================================================================
+;; Religion Status
+;; ============================================================================
+
+(defn religion-status
+  "Get religious satisfaction and temple coverage information."
+  []
+  (let [religion-stats (STATS/RELIGION)
+        all-religions (array-list->vec (.-ALL religion-stats))
+        all-hclasses (filter #(.player %) (array-list->vec (HCLASSES/ALL)))
+        all-races (array-list->vec (RACES/all))]
+    {:by-religion (into {}
+                        (map (fn [religion]
+                               [(.-key (.-religion religion))
+                                {:temple-access (.getD (.data (.access (.-TEMPLE religion-stats) (.-religion religion))) nil)
+                                 :temple-quality (.getD (.data (.quality (.-TEMPLE religion-stats) (.-religion religion))) nil)
+                                 :shrine-access (.getD (.data (.access (.-SHRINE religion-stats) (.-religion religion))) nil)
+                                 :shrine-quality (.getD (.data (.quality (.-SHRINE religion-stats) (.-religion religion))) nil)
+                                 :followers (.-followers religion)
+                                 :total (.getD (.data (.-followers religion)) nil)}])
+                             all-religions))
+     :opposition (.getD (.data (.-OPPOSITION religion-stats)) nil)
+     :by-class (into {}
+                     (map (fn [hclass]
+                            [(.toString (.name hclass))
+                             (into {}
+                                   (map (fn [religion]
+                                          [(.-key (.-religion religion))
+                                           {:temple-access (.getD (.data (.access (.-TEMPLE religion-stats) (.-religion religion)) hclass) nil)
+                                            :temple-quality (.getD (.data (.quality (.-TEMPLE religion-stats) (.-religion religion)) hclass) nil)
+                                            :shrine-access (.getD (.data (.access (.-SHRINE religion-stats) (.-religion religion)) hclass) nil)
+                                            :shrine-quality (.getD (.data (.quality (.-SHRINE religion-stats) (.-religion religion)) hclass) nil)}])
+                                        all-religions))])
+                          all-hclasses))
+     :by-race (into {}
+                    (map (fn [race]
+                           [(.toString (.-key race))
+                            (into {}
+                                  (map (fn [religion]
+                                         [(.-key (.-religion religion))
+                                          {:temple-access (.getD (.data (.access (.-TEMPLE religion-stats) (.-religion religion)) nil) race)
+                                           :temple-quality (.getD (.data (.quality (.-TEMPLE religion-stats) (.-religion religion)) nil) race)
+                                           :shrine-access (.getD (.data (.access (.-SHRINE religion-stats) (.-religion religion)) nil) race)
+                                           :shrine-quality (.getD (.data (.quality (.-SHRINE religion-stats) (.-religion religion)) nil) race)}])
+                                      all-religions))])
+                         all-races))}))
+
+(comment
+  (religion-status)
+  :rcf)
+
+;; ============================================================================
+;; Employment Status
+;; ============================================================================
+
+(defn employment-status
+  "Get employment, job satisfaction, and unemployment information."
+  []
+  (let [work-stats (STATS/WORK)
+        all-races (array-list->vec (RACES/all))]
+    {:workforce {:total (.workforce work-stats)
+                 :by-race (into {}
+                                (map (fn [race]
+                                       [(.-key race)
+                                        (.workforce work-stats race)])
+                                     all-races))}
+     :fulfillment {:total (.getD (.data (.-WORK_FULFILLMENT work-stats)) nil)
+                   :by-race (into {}
+                                  (map (fn [race]
+                                         [(.-key race)
+                                          (.getD (.data (.-WORK_FULFILLMENT work-stats) nil) race)])
+                                       all-races))}
+     :retirement {:age (.-RETIREMENT_AGE (.-RET work-stats))
+                  :home-access (.-RETIREMENT_HOME (.-RET work-stats))}
+     :work-time (.-WORK_TIME work-stats)}))
+
+(comment
+  (employment-status)
+  :rcf)
+
+;; ============================================================================
+;; Government and Law Status
+;; ============================================================================
+
+(defn government-status
+  "Get government, law, and policy information including taxes, laws, administration."
+  []
+  (let [govern-stats (STATS/GOVERN)
+        law-stats (STATS/LAW)
+        llaw (.-lLAW law-stats)
+        ;; Get LawRate via LAW.law() static method
+        law-rate (.rate (settlement.stats.law.LAW/law))
+        ;; Get Processing for punishment limits
+        processing (settlement.stats.law.LAW/process)
+        all-races (array-list->vec (RACES/all))]
+    {:wealth {:riches (.-RICHES govern-stats)
+              :tourism-friend (.-tourismFriend govern-stats)
+              :tourism-enemy (.-tourismEnemy govern-stats)}
+     :law {:equality (.-EQUALITY law-stats)
+           :effectiveness (.getD law-rate 0)
+           :ex-con (.getD (.data (.-EX_CON law-stats) nil) nil)}
+     :punishments (array-list->vec (.-punishments law-stats))
+     :punishment-limits (into {}
+                               (map (fn [p]
+                                      [(.-key p)
+                                       (into {}
+                                             (map (fn [race]
+                                                    [(.toString (.-key race))
+                                                     (.limit p race)])
+                                                  all-races))])
+                                    (array-list->vec (.-punishmentsdec processing))))}))
+
+;; ============================================================================
+;; Food Distribution (Rations) Status
+;; ============================================================================
+
+(defn distribution-status
+  "Get food and drink ration distribution information by class and race."
+  []
+  (let [food-stats (STATS/FOOD)
+        food-decree (.decree (.-FOOD food-stats))
+        drink-decree (.decree (.-DRINK food-stats))
+        all-hclasses (filter #(.player %) (array-list->vec (HCLASSES/ALL)))
+        all-races (array-list->vec (RACES/all))]
+    {:food-rations {:decree food-decree
+                    :by-class (into {}
+                                   (map (fn [hclass]
+                                          [(.toString (.name hclass))
+                                           (into {}
+                                                 (map (fn [race]
+                                                        [(.toString (.-key race))
+                                                         (.get food-decree hclass race)])
+                                                      all-races))])
+                                        all-hclasses))
+                    :days-remaining (.-FOOD_DAYS food-stats)}
+     :drink-rations {:decree drink-decree
+                     :by-class (into {}
+                                    (map (fn [hclass]
+                                           [(.toString (.name hclass))
+                                            (into {}
+                                                  (map (fn [race]
+                                                         [(.toString (.-key race))
+                                                          (.get drink-decree hclass race)])
+                                                       all-races))])
+                                         all-hclasses))}
+     :starvation (.-STARVATION food-stats)}))
+
+(comment
+  (distribution-status)
+  :rcf)
+
+;; ============================================================================
+;; Combined Settlement Stats Summary
+;; ============================================================================
+
+(defn settlement-stats-summary
+  "Get a comprehensive summary of all settlement stats including loyalty, happiness,
+   population, services, environment, religion, employment, and government."
+  []
+  {:loyalty (loyalty-status)
+   :happiness (happiness-status)
+   :population (population-breakdown)
+   :distribution (distribution-status)
+   :services (service-coverage)
+   :environment (environment-status)
+   :religion (religion-status)
+   :employment (employment-status)
+   :government (government-status)})
+
+(comment
+  (settlement-stats-summary)
+  :rcf)
+
+(defn print-settlement-stats-summary
+  "Print a human-readable summary of all settlement stats."
+  []
+  (let [summary (settlement-stats-summary)]
+    (println "=== SETTLEMENT STATS SUMMARY ===")
+    (println)
+
+    ;; Loyalty
+    (println "Loyalty:")
+    (println "  Overall:" (format "%.2f" (:overall (:loyalty summary))))
+    (println "  Target:" (format "%.2f" (:target (:loyalty summary))))
+    (println)
+
+    ;; Population
+    (println "Population:")
+    (println "  Total:" (:total (:population summary)))
+    (println "  By Class:" (:by-class (:population summary)))
+    (println "  By Race:" (:by-race (:population summary)))
+    (println)
+
+    ;; Employment
+    (println "Employment:")
+    (println "  Employed:" (:total (:employment (:employment summary))))
+    (let [workforce-total (:total (:workforce (:employment summary)))
+          employed-total (:total (:employment (:employment summary)))]
+      (print "  Workforce:" workforce-total)
+      (when (pos? workforce-total)
+        (println " (" (format "%.1f" (* 100 (/ employed-total workforce-total))) "%)")
+        (println)))
+    (println "  Incapacitated:" (:total (:incapacitated (:employment summary))))
+    (println)
+
+    ;; Services (simplified)
+    (println "Services: " (count (:services (:services summary))) "service types available")
+    (println)
+
+    ;; Environment
+    (println "Environment:")
+    (println "  Unburied Corpses:" (:unburied (:pollution (:environment summary))))
+    (println)
+
+    ;; Religion
+    (println "Religion:")
+    (println "  Opposition:" (format "%.2f" (:opposition (:religion summary))))
+    (println)
+
+    ;; Government
+    (println "Government:")
+    (println "  Riches:" (format "%.2f" (:riches (:wealth (:government summary))))
+    (println "  Law Rate:" (format "%.2f" (:rate (:law (:government summary)))))
+
+    summary)))
