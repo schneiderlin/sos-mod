@@ -762,26 +762,27 @@
     ;; Find a SINGLE door position (using entrance tiles as preference)
     (let [door-tile (find-home-door-position @room-tiles @entrance-tiles)]
       ;; Build walls around the room with single door (BEFORE creating construction)
-      (build-walls-around-room @room-tiles door-tile tbuilding))
+      (build-walls-around-room @room-tiles door-tile tbuilding)
 
-    ;; Create ConstructionInit with the structure (TBuilding) for walls
-    (let [construction-init (ConstructionInit. upgrade home-constructor tbuilding 0 nil)]
-      ;; Create the construction site
-      (.createClean (.construction rooms) tmp construction-init))
+      ;; Create ConstructionInit with the structure (TBuilding) for walls
+      (let [construction-init (ConstructionInit. upgrade home-constructor tbuilding 0 nil)]
+        ;; Create the construction site
+        (.createClean (.construction rooms) tmp construction-init))
 
-    ;; tmp is cleared by createClean
+      ;; tmp is cleared by createClean
 
-    {:success true
-     :center-x center-x
-     :center-y center-y
-     :start-x start-x
-     :start-y start-y
-     :width width
-     :height height
-     :home-type home-type
-     :variation variation
-     :rotation rotation
-     :material material-name}))
+      {:success true
+       :center-x center-x
+       :center-y center-y
+       :start-x start-x
+       :start-y start-y
+       :width width
+       :height height
+       :home-type home-type
+       :variation variation
+       :rotation rotation
+       :material material-name
+       :door-tile door-tile})))
 
 ;; Create a home using update-once (ensures it happens in a single frame)
 (defn create-home-once [center-x center-y home-type & {:keys [variation rotation upgrade material-name]
@@ -816,5 +817,320 @@
 
   ;; Create a wider variation of small home (variation 1 = 2x width)
   (create-home-once 330 400 0 :variation 1)
+
+  :rcf)
+
+;; ============================================================================
+;; Road Building Functions
+;; ============================================================================
+
+;; Get all road types info
+(defn all-road-types-info []
+  (let [floors (SETT/FLOOR)
+        roads (.roads floors)
+        jobs (SETT/JOBS)
+        road-jobs (.roads jobs)]
+    (map-indexed (fn [idx floor]
+                   {:index idx
+                    :key (.key floor)
+                    :name (str (.name floor))
+                    :job (.get (.all road-jobs) idx)})
+                 roads)))
+
+;; Get the default dirt road job (uses SETT.FLOOR().defaultRoad)
+(defn get-default-road-job []
+  (let [floors (SETT/FLOOR)
+        default-road (.defaultRoad floors)
+        jobs (SETT/JOBS)
+        road-jobs (.roads jobs)
+        ;; Find the index of defaultRoad in the roads list
+        roads-list (.roads floors)
+        default-index (loop [i 0]
+                       (if (< i (.size roads-list))
+                         (if (= (.get roads-list i) default-road)
+                           i
+                           (recur (inc i)))
+                         nil))]
+    (if default-index
+      (.get (.all road-jobs) default-index)
+      ;; Fallback to index 0 if default road not found
+      (.get (.all road-jobs) 0))))
+
+;; Get road job by index
+(defn get-road-job-by-index [index]
+  (let [jobs (SETT/JOBS)
+        road-jobs (.roads jobs)]
+    (when (< index (.size (.all road-jobs)))
+      (.get (.all road-jobs) index))))
+
+;; Get road job by key (e.g., "_DEFAULT_ROAD")
+(defn get-road-job-by-key [key]
+  (let [floors (SETT/FLOOR)
+        roads (.roads floors)
+        jobs (SETT/JOBS)
+        road-jobs (.roads jobs)]
+    (loop [i 0]
+      (if (< i (.size roads))
+        (let [floor (.get roads i)]
+          (if (= (.key floor) key)
+            (.get (.all road-jobs) i)
+            (recur (inc i))))
+        nil))))
+
+(comment
+  ;; Get all road types info
+  (all-road-types-info)
+  
+  ;; Get default road job
+  (get-default-road-job)
+  
+  ;; Get road job by index
+  (get-road-job-by-index 0)
+  (get-road-job-by-index 1)
+  
+  ;; Get road job by key
+  (get-road-job-by-key "_DEFAULT_ROAD")
+  
+  :rcf)
+
+;; Build a single road tile
+;; tx, ty: tile coordinates
+;; road-type: optional, can be:
+;;   - nil or :default - uses default dirt road
+;;   - integer index - uses road at that index
+;;   - string key - uses road with that key (e.g., "_DEFAULT_ROAD")
+(defn build-road-tile-once [tx ty & {:keys [road-type] :or {road-type :default}}]
+  (utils/update-once
+   (fn [_ds]
+     (let [road-job (cond
+                     (= road-type :default) (get-default-road-job)
+                     (integer? road-type) (get-road-job-by-index road-type)
+                     (string? road-type) (get-road-job-by-key road-type)
+                     :else (get-default-road-job))
+           placer (.placer road-job)]
+       ;; Try to place the road (similar to clear-wood-once approach)
+       ;; Roads may need to be placed directly without isPlacable check
+       (try
+         (.place placer tx ty nil nil)
+         (catch Exception _
+           ;; If placement fails, check why
+           (let [error-msg (.isPlacable placer tx ty nil nil)]
+             (println "Cannot place road at" tx ty ":" error-msg))))))))
+
+;; Debug version: Check if road can be placed and print the result
+(defn check-road-placement [tx ty]
+  (let [road-job (get-default-road-job)
+        placer (.placer road-job)
+        result (.isPlacable placer tx ty nil nil)]
+    (println "Road placement check at" tx ty ":" (if (nil? result) "OK" result))
+    (nil? result)))
+
+;; Alternative: Build road using the combo placer
+(defn build-road-tile-combo-once [tx ty]
+  (utils/update-once
+   (fn [_ds]
+     (let [jobs (SETT/JOBS)
+           road-jobs (.roads jobs)
+           combo-placer (.pla road-jobs)
+           current-placer (.current combo-placer)]
+       (if current-placer
+         (try
+           (.place current-placer tx ty nil nil)
+           (catch Exception e
+             (println "Error placing road:" (.getMessage e))))
+         (println "No current placer available - try setting it first"))))))
+
+;; Alternative: Build road directly using floor.placeFixed
+;; This bypasses the job system and places the road floor directly
+(defn build-road-tile-direct-once [tx ty]
+  (utils/update-once
+   (fn [_ds]
+     (let [floors (SETT/FLOOR)
+           default-road (.defaultRoad floors)]
+       (try
+         (.placeFixed default-road tx ty)
+         (catch Exception e
+           (println "Error placing road directly:" (.getMessage e))))))))
+
+(comment
+  ;; Debug: Check if road can be placed
+  (check-road-placement 280 390)
+  (check-road-placement 290 403)
+  
+  ;; Build roads with different types:
+  ;; 1. Default dirt road (recommended)
+  (build-road-tile-once 280 390 :road-type :default)
+  (build-road-tile-once 290 403)  ;; :default is the default
+  
+  ;; 2. By index (check all-road-types-info first to see available indices)
+  (build-road-tile-once 280 390 :road-type 0)
+  (build-road-tile-once 280 390 :road-type 1)
+  
+  ;; 3. By key
+  (build-road-tile-once 280 390 :road-type "_DEFAULT_ROAD")
+  
+  ;; Build multiple tiles with specific road type
+  (build-road-tiles-once [[100 100] [100 101] [100 102]] :road-type :default)
+  
+  ;; Alternative approaches:
+  ;; 1. Try using the combo placer
+  (build-road-tile-combo-once 280 390)
+  
+  ;; 2. Try placing road directly using floor.placeFixed
+  (build-road-tile-direct-once 290 403)
+  
+  :rcf)
+
+;; Build multiple road tiles in a line or pattern
+;; tiles: list of [x y] coordinates
+;; road-type: optional, same as build-road-tile-once
+(defn build-road-tiles-once [tiles & {:keys [road-type] :or {road-type :default}}]
+  (utils/update-once
+   (fn [_ds]
+     (let [road-job (cond
+                     (= road-type :default) (get-default-road-job)
+                     (integer? road-type) (get-road-job-by-index road-type)
+                     (string? road-type) (get-road-job-by-key road-type)
+                     :else (get-default-road-job))
+           placer (.placer road-job)]
+       (doseq [[tx ty] tiles]
+         (when (nil? (.isPlacable placer tx ty nil nil))
+           (.place placer tx ty nil nil)))))))
+
+;; Helper: Calculate a simple road path between house positions
+;; house-positions: list of [house-x house-y door-tile] tuples
+;; Returns: list of [x y] coordinates for road tiles
+(defn calculate-road-path [house-positions]
+  (let [road-tiles (atom #{})]  ;; Use set to avoid duplicates
+    ;; Simple approach: create a path connecting house doors
+    ;; For each house, add a few tiles extending outward from the door
+    (doseq [[_ _ door-tile] house-positions]
+      (when door-tile
+        (let [[door-x door-y] door-tile
+              ;; Add 3-4 tiles extending outward from door (south direction)
+              path-tiles (for [i (range 1 4)]
+                          [door-x (+ door-y i)])]
+          (doseq [tile path-tiles]
+            (swap! road-tiles conj tile)))))
+    ;; If we have multiple houses, try to connect them with a horizontal path
+    (when (> (count house-positions) 1)
+      (let [door-tiles (filter some? (map (fn [[_ _ dt]] dt) house-positions))
+            min-x (apply min (map first door-tiles))
+            max-x (apply max (map first door-tiles))
+            avg-y (int (Math/round (double (/ (reduce + (map second door-tiles)) (count door-tiles)))))]
+        ;; Add horizontal connecting path
+        (doseq [x (range min-x (inc max-x))]
+          (swap! road-tiles conj [x avg-y]))))
+    (vec @road-tiles)))
+
+;; Build roads near houses
+;; house-positions: list of [house-x house-y door-tile] tuples
+;; Builds up to 10 tiles of road connecting the houses
+;; road-type: optional, same as build-road-tile-once
+(defn build-roads-near-houses-once [house-positions & {:keys [road-type] :or {road-type :default}}]
+  (utils/update-once
+   (fn [_ds]
+     (let [road-job (cond
+                     (= road-type :default) (get-default-road-job)
+                     (integer? road-type) (get-road-job-by-index road-type)
+                     (string? road-type) (get-road-job-by-key road-type)
+                     :else (get-default-road-job))
+           placer (.placer road-job)
+           ;; Calculate road tiles - connect houses with a simple path
+           road-tiles (calculate-road-path house-positions)]
+       ;; Build up to 10 road tiles
+       (doseq [[tx ty] (take 10 road-tiles)]
+         (when (nil? (.isPlacable placer tx ty nil nil))
+           (.place placer tx ty nil nil)))))))
+
+;; Alternative: Build roads in a grid pattern
+;; start-x, start-y: top-left corner
+;; width, height: dimensions for the grid
+;; road-type: optional, same as build-road-tile-once
+(defn build-road-grid-once [start-x start-y width height & {:keys [road-type] :or {road-type :default}}]
+  (utils/update-once
+   (fn [_ds]
+     (let [road-job (cond
+                     (= road-type :default) (get-default-road-job)
+                     (integer? road-type) (get-road-job-by-index road-type)
+                     (string? road-type) (get-road-job-by-key road-type)
+                     :else (get-default-road-job))
+           placer (.placer road-job)
+           ;; Build horizontal road
+           horizontal-tiles (for [x (range start-x (+ start-x width))]
+                              [x start-y])
+           ;; Build vertical road
+           vertical-tiles (for [y (range start-y (+ start-y height))]
+                          [start-x y])
+           all-tiles (concat horizontal-tiles vertical-tiles)]
+       ;; Build up to 10 tiles
+       (doseq [[tx ty] (take 10 all-tiles)]
+         (when (nil? (.isPlacable placer tx ty nil nil))
+           (.place placer tx ty nil nil)))))))
+
+(comment
+  ;; Road building examples
+
+  ;; Build a single road tile
+  (build-road-tile-once 280 390)
+
+
+  ;; Build multiple road tiles
+  (build-road-tiles-once [[100 100] [100 101] [100 102] [101 102] [102 102]])
+
+  ;; Build roads near houses (after creating houses)
+  ;; Note: create-home-once returns immediately, so you may need to wait
+  ;; or use the door-tile from the result if available
+  (build-roads-near-houses-once 
+   [[290 400 [290 399]]
+    [300 400 [300 399]]
+    [310 400 [310 399]]])
+
+  ;; Build roads in a grid pattern
+  (build-road-grid-once 280 390 30 20)
+
+  (move-camera-to-tile 280 390)
+
+  :rcf)
+
+;; ============================================================================
+;; Complete Example: Build Houses and Roads
+;; ============================================================================
+
+;; Build multiple houses and connect them with roads
+;; center-x, center-y: starting position
+;; count: number of houses to build
+;; spacing: spacing between houses (default 10)
+;; Returns: list of house creation results
+(defn build-houses-with-roads-once [center-x center-y count & {:keys [spacing home-type]
+                                                                :or {spacing 10 home-type 0}}]
+  (utils/update-once
+   (fn [_ds]
+     (let [houses (atom [])
+           house-positions (atom [])]
+       ;; Build houses in a row
+       (doseq [i (range count)]
+         (let [x (+ center-x (* i spacing))
+               y center-y
+               result (create-home x y home-type)]
+           (swap! houses conj result)
+           ;; Collect door position for road building
+           (when-let [door-tile (:door-tile result)]
+             (swap! house-positions conj [x y door-tile]))))
+       
+       ;; Build roads connecting the houses (up to 10 tiles)
+       (when (seq @house-positions)
+         (let [road-job (get-default-road-job)
+               placer (.placer road-job)
+               road-tiles (calculate-road-path @house-positions)]
+           (doseq [[tx ty] (take 10 road-tiles)]
+             (when (nil? (.isPlacable placer tx ty nil nil))
+               (.place placer tx ty nil nil)))))
+       
+       @houses))))
+
+(comment
+  ;; Complete example: Build 3 houses and connect them with roads
+  (build-houses-with-roads-once 290 400 3 :spacing 10 :home-type 0)
 
   :rcf)
