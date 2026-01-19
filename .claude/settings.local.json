@@ -5,7 +5,8 @@
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "Bash(clj-nrepl-eval:*)",
-      "Skill(sos-play)"
+      "Skill(sos-play)",
+      "Bash(timeout:*)"
     ]
   }
 }

@@ -30,7 +30,34 @@
   (all-farm-info)
   :rcf)
 
-;; Get the first farm type (default vegetable farm)
+;; Get farm by key (e.g., "FARM_VEG", "FARM_COTTON")
+(defn get-farm-by-key [key]
+  (let [farms (all-farm-types)]
+    (first (filter #(= (.key %) key) farms))))
+
+(comment
+  (get-farm-by-key "FARM_VEG")
+  (get-farm-by-key "FARM_COTTON")
+  :rcf)
+
+;; Get vegetable farm (FARM_VEG) - the most common farm type
+(defn get-vegetable-farm []
+  (get-farm-by-key "FARM_VEG"))
+
+(comment
+  (get-vegetable-farm)
+  :rcf)
+
+;; Get cotton farm (FARM_COTTON)
+(defn get-cotton-farm []
+  (get-farm-by-key "FARM_COTTON"))
+
+(comment
+  (get-cotton-farm)
+  :rcf)
+
+;; Get the first farm type (for backward compatibility)
+;; NOTE: This returns an arbitrary farm type - use get-vegetable-farm or get-farm-by-key for specific types
 (defn get-farm []
   (let [farms (all-farm-types)]
     (first farms)))
@@ -143,14 +170,14 @@
 ;; width, height: dimensions of the farm (in tiles)
 ;; material-name: building material name (e.g., "WOOD", "STONE") - not used for farms, but kept for consistency
 ;; upgrade: upgrade level (default 0)
-;; farm-type: optional farm type (if nil, uses first available farm)
-(defn create-farm [center-x center-y width height & {:keys [material-name upgrade farm-type] 
+;; farm-type: optional farm type (if nil, defaults to vegetable farm FARM_VEG)
+(defn create-farm [center-x center-y width height & {:keys [material-name upgrade farm-type]
                                                       :or {material-name "WOOD" upgrade 0}}]
   (let [rooms (SETT/ROOMS)
-        ;; Get farm type (use provided or default to first)
-        farm (or farm-type (get-farm))
+        ;; Get farm type (use provided or default to vegetable farm)
+        farm (or farm-type (get-vegetable-farm))
         _ (when (nil? farm)
-            (throw (Exception. "No farm types available")))
+            (throw (Exception. "No farm types available - FARM_VEG not found")))
         farm-constructor (get-farm-constructor farm)
         ;; Note: Farms typically don't use building materials like warehouses,
         ;; but we'll use WOOD as default for consistency with other room types
@@ -195,29 +222,37 @@
 
 (comment
   ;; Example usage:
-  
+
   ;; Check location quality before building
   (get-farm-location-quality 200 200 10 10)
-  
-  ;; Create a 10x10 farm at center (200, 200)
+
+  ;; Get specific farm types
+  (get-vegetable-farm)
+  (get-cotton-farm)
+  (get-farm-by-key "FARM_GRAIN")
+
+  ;; Create a vegetable farm (default behavior)
   (create-farm-once 200 200 10 10)
-  
-  ;; Create a larger farm (15x15)
-  (create-farm-once 250 250 15 15)
-  
+
+  ;; Create a cotton farm explicitly
+  (create-farm-once 250 250 15 15 :farm-type (get-cotton-farm))
+
+  ;; Create a grain farm using key
+  (create-farm-once 300 300 12 12 :farm-type (get-farm-by-key "FARM_GRAIN"))
+
   ;; Get all available farm types
   (all-farm-info)
-  
+
   ;; Get fertility at a specific tile
   (get-fertility 200 200)
-  
+
   ;; Get average fertility for an area
   (get-average-fertility 200 200 10 10)
-  
+
   ;; Check water access
   (has-water-access? 200 200)
   (get-water-access-percentage 200 200 10 10)
-  
+
   :rcf)
 
 ;; ============================================================================
