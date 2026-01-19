@@ -432,6 +432,22 @@
 
 (comment
   (extract-all)
+
+  (def races (read-string (slurp "output/wiki/data/races.edn")))
+
+  (->> races
+       :races
+       (map #(select-keys % [:boosts :key]))
+       (map (fn [d]
+              {:mass (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_MASS")) first)
+               :health (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_HEALTH")) first)
+               :acceleration (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_ACCELERATION")) first)
+               :death-age (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_DEATH_AGE")) first)
+               :resistance-cold (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_RESISTANCE_COLD")) first)
+               :resistance-hot (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_RESISTANCE_HOT")) first)
+               :speed (->> d :boosts (filter #(= (:boostable-key %) "PHYSICS_SPEED")) first)
+               :rate-hunger (->> d :boosts (filter #(= (:boostable-key %) "RATES_HUNGER")) first)
+               :key (:key d)})))
   :rcf)
 
 ;; ============================================
