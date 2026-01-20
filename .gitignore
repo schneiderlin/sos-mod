@@ -14,3 +14,9 @@ public/output.css
 .nrepl-port
 sos-src
 base
+
+# LSP generated
+.settings
+.classpath
+.factorypath
+.project

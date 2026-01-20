@@ -708,6 +708,25 @@
                  (not= [x y] door-tile))
         (UtilWallPlacability/wallBuild x y tbuilding)))))
 
+(comment
+  (let [rooms (SETT/ROOMS)
+        home-constructor (get-home-constructor)
+        tbuilding (get-building-material "WOOD")
+        
+        ;; Get the correct FurnisherItemGroup for the home type
+        ;; Group 0 = 3x3 homes, Group 1 = 3x5 homes, Group 2 = 5x6 homes
+        furnisher-group (.get (.pgroups home-constructor) 1)
+        
+        ;; 这个 variant 是 size, 可以通过 ctrl + 滚轮放大缩小
+        ;; 小房子 一共 9 个级别
+        ;; 中房子 一共 15 个级别
+        ;; Get the FurnisherItem with specified variation and rotation
+        furnisher-item (.item furnisher-group 14 0)]
+    #_(.height furnisher-item)
+    (.get furnisher-item 44 5)
+    )
+  :rcf)
+
 ;; Create a home at specified center coordinates
 ;; Parameters:
 ;;   center-x, center-y: Center tile coordinates
